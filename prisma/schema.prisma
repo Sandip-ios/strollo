@@ -1,0 +1,460 @@
+// ============================================================================
+// STROLLO — Database Schema
+// Modular monolith: models are grouped by domain module with comments.
+// Soft delete: every user-facing entity has `deletedAt` instead of hard delete.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// MODULE: auth / users
+// ----------------------------------------------------------------------------
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+  // WALKER is intentionally reserved for future self-service walker login.
+  // Walkers today are represented by the standalone `Walker` model below,
+  // with an optional link to `User` so we can attach login later without
+  // a schema migration that breaks existing data.
+  WALKER
+}
+
+model User {
+  id           String    @id @default(cuid())
+  role         UserRole  @default(CUSTOMER)
+  mobileNumber String    @unique
+  name         String?
+  email        String?
+  isActive     Boolean   @default(true)
+  // Set once, at signup, when the customer checks "I agree to the Terms of
+  // Service and Privacy Policy" — a legal record of consent, not just a
+  // client-side gate. Null for accounts created before this existed.
+  acceptedTermsAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  addresses     Address[]
+  dogs          Dog[]
+  bookings      Booking[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  walkerProfile Walker?        @relation("UserToWalker")
+  walkerRatings WalkerRating[]
+
+  @@index([mobileNumber])
+  @@map("users")
+}
+
+// Static test OTP ("123456") is validated in application code for now.
+// This table exists so real OTP delivery can be plugged in later without
+// changing the auth flow's shape.
+model OtpRequest {
+  id           String    @id @default(cuid())
+  mobileNumber String
+  code         String
+  purpose      String // "LOGIN" | "SIGNUP"
+  isVerified   Boolean   @default(false)
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+
+  @@index([mobileNumber])
+  @@map("otp_requests")
+}
+
+// ----------------------------------------------------------------------------
+// MODULE: addresses
+// ----------------------------------------------------------------------------
+
+model Address {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id])
+  houseNumber  String    // Flat / House No.
+  label        String    // Society / Building name — also used as the display label
+  line1        String    // Area / Street
+  line2        String?   // Landmark (optional)
+  city         String
+  state        String
+  pincode      String
+  latitude     Float
+  longitude    Float
+  isDefault    Boolean   @default(false)
+  serviceAreaId String?
+  serviceArea  ServiceArea? @relation(fields: [serviceAreaId], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  bookings Booking[]
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+// ----------------------------------------------------------------------------
+// MODULE: dogs
+// ----------------------------------------------------------------------------
+
+enum DogGender {
+  MALE
+  FEMALE
+}
+
+enum DogSize {
+  SMALL  // up to ~10kg
+  MEDIUM // ~10-25kg
+  LARGE  // 25kg+
+}
+
+model Dog {
+  id                   String    @id @default(cuid())
+  userId               String
+  user                 User      @relation(fields: [userId], references: [id])
+  name                 String
+  breed                String
+  size                 DogSize
+  age                  Int
+  weightKg             Float
+  gender               DogGender
+  isVaccinated         Boolean   @default(false)
+  isRabiesVaccinated   Boolean   @default(false)
+  temperament          String[]  @default([]) // e.g. "Friendly", "Aggressive", "Shy", "Playful", "Calm"
+  isRegisteredWithAMC  Boolean   @default(false)
+  amcRegistrationNumber String?
+  medicalNotes         String?
+  behaviourNotes       String?
+  photoUrl             String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  deletedAt            DateTime?
+
+  bookingDogs BookingDog[]
+
+  @@index([userId])
+  @@map("dogs")
+}
+
+// ----------------------------------------------------------------------------
+// MODULE: plans (admin-manageable pricing)
+// ----------------------------------------------------------------------------
+
+enum PlanType {
+  TRIAL // deprecated: trial-walk plans are no longer created, kept so old rows/migrations stay valid
+  WEEKLY
+  MONTHLY
+  CUSTOM // admin-defined, unlimited count, hidden from booking flow unless activated
+}
+
+// Every active plan is exposed in the customer booking flow, gated by
+// `dogQuantity`: a customer only sees plans whose dogQuantity exactly
+// matches how many dogs they selected. CUSTOM plans are free-form,
+// admin-created plans — any number of them, unlike the fixed types above,
+// which is how multiple dog-count variants of "the same" plan get modeled
+// (e.g. MONTHLY at dogQuantity=1, plus a CUSTOM "Monthly — 2 Dogs" plan).
+model Plan {
+  id          String    @id @default(cuid())
+  type        PlanType
+  name        String
+  price       Int // stored in paise (₹1599 => 159900) to avoid float rounding
+  dogQuantity Int       @default(1) // exact number of dogs this plan covers
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  bookings Booking[]
+
+  @@map("plans")
+}
+
+// ----------------------------------------------------------------------------
+// MODULE: service areas (admin-managed serviceability — gates address
+// creation: a pincode not covered by any active ServiceArea is rejected as
+// "not serviceable", unless zero ServiceAreas exist at all, in which case
+// the check is skipped so a fresh instance isn't locked out before an
+// admin has configured anything.)
+// ----------------------------------------------------------------------------
+
+model ServiceArea {
+  id        String    @id @default(cuid())
+  name      String
+  city      String
+  pincodes  String[] // e.g. ["380009", "380014"] — the pincodes this area covers
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  addresses Address[]
+
+  @@map("service_areas")
+}
+
+// ----------------------------------------------------------------------------
+// MODULE: walkers (admin-managed only, no self-login yet)
+// ----------------------------------------------------------------------------
+
+model Walker {
+  id                String    @id @default(cuid())
+  // Optional link to a future User account for self-service login.
+  userId            String?   @unique
+  user              User?     @relation("UserToWalker", fields: [userId], references: [id])
+  name              String
+  mobileNumber      String    @unique
+  photoUrl          String?
+  area              String    // Locality / area they operate in, e.g. "Satellite, Ahmedabad"
+  govIdType         String?   // "Aadhaar Card", "PAN Card", "Driving License", "Voter ID"
+  govIdNumber       String?
+  govIdPhotoUrl     String?
+  notes             String?   // Any other admin notes on this walker
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  bookings Booking[]
+  walks    WalkInstance[]
+  ratings  WalkerRating[]
+
+  @@map("walkers")
+}
+
+// ----------------------------------------------------------------------------
+// MODULE: bookings
+// ----------------------------------------------------------------------------
+
+enum WalkSlot {
+  MORNING   // 9 AM - 12 PM
+  AFTERNOON // 12 PM - 3 PM
+  EVENING   // 3 PM - 6 PM
+  NIGHT     // 6 PM - 9 PM
+}
+
+// CANCELLED covers both an admin rejecting a CONFIRMED booking pre-approval
+// (full refund, nothing has happened yet) and an admin cancelling an
+// APPROVED/WALKER_ASSIGNED/ACTIVE booking partway through (pro-rated refund
+// for remaining, not-yet-completed walks) — same terminal state, same
+// refund mechanism, just triggered at different points in the lifecycle.
+// See /api/admin/bookings/[id]/cancel and src/lib/refund.ts.
+enum BookingStatus {
+  PENDING_PAYMENT
+  CONFIRMED       // payment successful, awaiting admin approval
+  APPROVED        // admin has reviewed and approved — now eligible for walker assignment
+  WALKER_ASSIGNED
+  ACTIVE          // walks are currently being executed day to day
+  COMPLETED       // full plan duration finished
+  EXPIRED         // payment window lapsed without completion
+  CANCELLED       // admin-rejected or admin-cancelled, with a corresponding refund
+}
+
+model Booking {
+  id           String        @id @default(cuid())
+  customerId   String
+  customer     User          @relation(fields: [customerId], references: [id])
+  planId       String
+  plan         Plan          @relation(fields: [planId], references: [id])
+  addressId    String
+  address      Address       @relation(fields: [addressId], references: [id])
+  slot         WalkSlot
+  startDate    DateTime // e.g. 4th of the month
+  endDate      DateTime // exclusive: 3rd of next month (1 calendar month cycle)
+  status       BookingStatus @default(PENDING_PAYMENT)
+  walkerId     String?
+  walker       Walker?       @relation(fields: [walkerId], references: [id])
+  priceAtBooking Int // snapshot of plan price in paise at time of booking
+  // Extra days appended past the normal 1-month cycle, carried forward from
+  // cancelled walk-days on the customer's earlier bookings. Same price,
+  // longer duration — see WalkInstance.carriedForward.
+  carriedOverDays Int @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
+
+  bookingDogs BookingDog[]
+  walks       WalkInstance[]
+  payment     Payment?
+  rating      WalkerRating?
+
+  @@index([customerId])
+  @@index([walkerId])
+  @@map("bookings")
+}
+
+// One rating per booking (subscription), not per walk — prompted once the
+// booking's duration has run its course (today >= endDate), rather than
+// after every individual walk. A booking always has a single walker
+// assigned for its whole duration, so the rating is really "how was this
+// walker for this subscription" rather than needing its own walker
+// selection.
+model WalkerRating {
+  id         String   @id @default(cuid())
+  bookingId  String   @unique
+  booking    Booking  @relation(fields: [bookingId], references: [id])
+  walkerId   String
+  walker     Walker   @relation(fields: [walkerId], references: [id])
+  customerId String
+  customer   User     @relation(fields: [customerId], references: [id])
+  score      Int // 1-5
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  @@index([walkerId])
+  @@map("walker_ratings")
+}
+
+// Many-to-many: a booking can include multiple dogs
+model BookingDog {
+  id        String  @id @default(cuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id])
+  dogId     String
+  dog       Dog     @relation(fields: [dogId], references: [id])
+
+  @@unique([bookingId, dogId])
+  @@map("booking_dogs")
+}
+
+// ----------------------------------------------------------------------------
+// MODULE: walks (day-wise walk instances generated from a booking)
+// ----------------------------------------------------------------------------
+
+enum WalkStatus {
+  SCHEDULED
+  ON_GOING
+  COMPLETED
+  MISSED // admin/walker marks a day as missed
+  CANCELLED // customer cancelled ≥8h before the slot start; credited toward the customer's next booking
+}
+
+// One row per calendar day of a booking, excluding Sundays.
+// Generated in bulk when a booking becomes CONFIRMED.
+model WalkInstance {
+  id             String     @id @default(cuid())
+  bookingId      String
+  booking        Booking    @relation(fields: [bookingId], references: [id])
+  walkerId       String?
+  walker         Walker?    @relation(fields: [walkerId], references: [id])
+  scheduledDate  DateTime // calendar date only
+  status         WalkStatus @default(SCHEDULED)
+  startTime      DateTime?
+  endTime        DateTime?
+  distanceMeters Float?
+  durationSec    Int?
+  routePath      Json? // array of {lat, lng, ts} points — recorded, not live yet
+  pooUpdate      Boolean?
+  peeUpdate      Boolean?
+  walkerNotes    String?
+  cancelledAt    DateTime? // set when the customer cancels this day
+  // True once this cancelled day's "credit" has been applied to extend a
+  // later booking's duration — prevents the same cancelled day from being
+  // counted twice across multiple future bookings.
+  carriedForward Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  photos WalkPhoto[]
+
+  @@index([bookingId])
+  @@index([walkerId, scheduledDate])
+  @@map("walk_instances")
+}
+
+model WalkPhoto {
+  id             String       @id @default(cuid())
+  walkInstanceId String
+  walkInstance   WalkInstance @relation(fields: [walkInstanceId], references: [id])
+  url            String // S3 object URL
+  createdAt      DateTime     @default(now())
+
+  @@map("walk_photos")
+}
+
+// ----------------------------------------------------------------------------
+// MODULE: payments
+// ----------------------------------------------------------------------------
+
+enum PaymentStatus {
+  CREATED
+  SUCCESS
+  FAILED
+  REFUNDED // full or partial — see refundAmount for how much
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  bookingId         String        @unique
+  booking           Booking       @relation(fields: [bookingId], references: [id])
+  razorpayOrderId   String
+  razorpayPaymentId String?
+  razorpaySignature String?
+  amount            Int // paise
+  status            PaymentStatus @default(CREATED)
+  // Set when a booking is rejected/cancelled — refundAmount may be less
+  // than `amount` (pro-rated for already-completed walks).
+  refundAmount      Int?
+  razorpayRefundId  String?
+  refundedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@map("payments")
+}
+
+// ----------------------------------------------------------------------------
+// MODULE: notifications
+// ----------------------------------------------------------------------------
+
+enum NotificationType {
+  BOOKING_CONFIRMED
+  BOOKING_APPROVED
+  BOOKING_REJECTED
+  BOOKING_CANCELLED
+  PAYMENT_SUCCESSFUL
+  WALKER_ASSIGNED
+  WALK_STARTED
+  WALK_REACHED
+  WALK_COMPLETED
+  PLAN_EXPIRY_REMINDER
+  GENERAL
+}
+
+model Notification {
+  id        String            @id @default(cuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id])
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean           @default(false)
+  createdAt DateTime          @default(now())
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+// ----------------------------------------------------------------------------
+// MODULE: admin / audit
+// ----------------------------------------------------------------------------
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation(fields: [adminId], references: [id])
+  action     String // e.g. "PLAN_PRICE_UPDATED", "WALKER_REASSIGNED"
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([adminId])
+  @@map("audit_logs")
+}

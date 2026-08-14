@@ -1,0 +1,46 @@
+export const DOG_BREEDS = [
+  "Indian Pariah Dog (Indie)",
+  "Labrador Retriever",
+  "Golden Retriever",
+  "German Shepherd",
+  "Beagle",
+  "Pug",
+  "Shih Tzu",
+  "Pomeranian",
+  "Rottweiler",
+  "Doberman Pinscher",
+  "Great Dane",
+  "Cocker Spaniel",
+  "Dachshund",
+  "Boxer",
+  "Siberian Husky",
+  "Saint Bernard",
+  "Lhasa Apso",
+  "French Bulldog",
+  "Chihuahua",
+  "Rajapalayam",
+  "Mudhol Hound",
+  "Bull Terrier",
+  "Cane Corso",
+  "Border Collie",
+  "Shiba Inu",
+  "Belgian Malinois",
+  "Bulldog",
+  "Maltese",
+  "Japanese Spitz",
+  "Cavalier King Charles Spaniel",
+] as const;
+
+export const DOG_SIZES = [
+  { value: "SMALL", label: "Small", range: "up to 10 kg" },
+  { value: "MEDIUM", label: "Medium", range: "10 – 25 kg" },
+  { value: "LARGE", label: "Large", range: "25 kg+" },
+] as const;
+
+export const TEMPERAMENT_OPTIONS = [
+  "Friendly",
+  "Aggressive",
+  "Shy / Anxious",
+  "Playful",
+  "Calm",
+] as const;
