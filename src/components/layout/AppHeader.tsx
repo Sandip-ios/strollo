@@ -39,10 +39,14 @@ const DESKTOP_NAV_LINKS = [
 // button, Addresses is dropped (reachable from Profile instead) since
 // five slots is already full once that center button takes one.
 const MOBILE_NAV_LINKS = [
-  { href: "/dashboard", label: "Home", icon: null },
-  { href: "/bookings", label: "Bookings", icon: CalendarCheck },
-  { href: "/dogs", label: "My Dogs", icon: Dog },
-  { href: "/profile", label: "Profile", icon: User },
+  { href: "/dashboard", label: "Home", icon: null, keepStrokeWhenFilled: false },
+  { href: "/bookings", label: "Bookings", icon: CalendarCheck, keepStrokeWhenFilled: false },
+  // Dog's ears/eyes/nose are drawn as open stroke paths, not closed
+  // fillable shapes (unlike Home's door) — zeroing the stroke when
+  // filled erases those details entirely, leaving just a blank blob
+  // where the head outline is. Needs its stroke kept on top of the fill.
+  { href: "/dogs", label: "My Dogs", icon: Dog, keepStrokeWhenFilled: true },
+  { href: "/profile", label: "Profile", icon: User, keepStrokeWhenFilled: false },
 ];
 
 const BOOK_LINK = { href: "/book", label: "Book a Walk" };
@@ -59,11 +63,14 @@ function MobileTab({ link, isActive }: { link: (typeof MOBILE_NAV_LINKS)[number]
             sub-path that otherwise gets its own visible outline stroke
             even though it's the same fill color as the body, leaving a
             stray seam line inside what should read as one solid
-            silhouette. HomeGlyph sidesteps this itself (no door path). */}
+            silhouette. HomeGlyph sidesteps this itself (no door path).
+            keepStrokeWhenFilled opts an icon out of this when its detail
+            marks (Dog's ears/eyes/nose) need the stroke to be visible
+            at all, since they're not closed shapes a fill can render. */}
         {link.icon ? (
           <link.icon
             className={`h-[25px] w-[25px] ${isActive ? "text-ink" : "text-ink/60"}`}
-            strokeWidth={isActive ? 0 : 1.75}
+            strokeWidth={isActive && !link.keepStrokeWhenFilled ? 0 : 1.75}
             fill={isActive ? "currentColor" : "none"}
           />
         ) : (
