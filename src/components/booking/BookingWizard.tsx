@@ -6,6 +6,7 @@ import Script from "next/script";
 import Image from "next/image";
 import { PawPrint, Sun, CloudSun, Sunset, Moon } from "lucide-react";
 import { WALK_SLOTS, WALK_DURATION_MINUTES } from "@/lib/constants";
+import { startNavProgress } from "@/lib/nav-progress";
 import DogFormModal from "@/components/dogs/DogFormModal";
 import AddressFormModal from "@/components/addresses/AddressFormModal";
 
@@ -270,6 +271,7 @@ export default function BookingWizard({
               setStage("IDLE");
               return;
             }
+            startNavProgress();
             router.push(`/bookings/${order.bookingId}`);
             router.refresh();
           } catch {

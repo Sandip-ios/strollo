@@ -72,12 +72,17 @@ export default function AuthMobileCarousel({
               style={{ objectPosition: "68% 30%" }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-navy-900/20 via-transparent to-transparent" />
-            <div className="absolute left-5 top-5">
-              <Logo variant="full" priority className="h-auto w-28 brightness-0 invert" />
+            {/* A gradient alone isn't reliable here — depending on how the
+                photo gets cropped/positioned across devices, the top-left
+                corner can still land on a bright patch (sky, glass towers)
+                with barely any darkening. A solid chip behind the logo
+                guarantees contrast no matter what's in the photo there. */}
+            <div className="absolute left-4 top-4 rounded-xl bg-navy-900/60 px-3 py-2 backdrop-blur-[2px]">
+              <Logo variant="full" priority className="h-auto w-24 brightness-0 invert" />
             </div>
           </div>
 
-          <div className="flex flex-1 flex-col px-6 pb-6 pt-5">
+          <div className="flex flex-1 flex-col px-6 pb-10 pt-5">
             <p className="font-display text-3xl font-extrabold leading-[1.1]">
               <span className="text-navy-700">Happy Steps,</span>
               <br />
@@ -137,8 +142,14 @@ export default function AuthMobileCarousel({
         </div>
       </div>
 
-      {/* dot indicators */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center gap-1.5">
+      {/* dot indicators — offset accounts for the iOS home-indicator /
+          browser-chrome safe area, not just a fixed pixel gap, so it
+          doesn't end up pinned right under the button on devices with a
+          tall bottom inset. */}
+      <div
+        className="pointer-events-none absolute inset-x-0 flex justify-center gap-1.5"
+        style={{ bottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+      >
         {[0, 1].map((i) => (
           <span
             key={i}

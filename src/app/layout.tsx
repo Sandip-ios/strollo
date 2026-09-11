@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Baloo_2, Inter, IBM_Plex_Mono } from "next/font/google";
+import NavigationProgress from "@/components/NavigationProgress";
 import "./globals.css";
 
 const baloo = Baloo_2({
@@ -34,7 +36,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${baloo.variable} ${inter.variable} ${plexMono.variable}`}>
-      <body className="bg-paper font-sans text-ink antialiased">{children}</body>
+      <body className="bg-paper font-sans text-ink antialiased">
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
+        {children}
+      </body>
     </html>
   );
 }

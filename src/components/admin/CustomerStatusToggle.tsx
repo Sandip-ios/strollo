@@ -51,7 +51,7 @@ export default function CustomerStatusToggle({
       <button
         onClick={toggle}
         disabled={loading}
-        className={`rounded-lg border px-4 py-2 text-sm font-medium transition disabled:opacity-50 ${
+        className={`w-full rounded-lg border px-4 py-2 text-sm font-medium transition disabled:opacity-50 sm:w-auto ${
           isActive
             ? "border-red-200 text-red-600 hover:bg-red-50"
             : "border-sand text-navy-600 hover:bg-sand/30"

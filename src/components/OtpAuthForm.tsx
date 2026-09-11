@@ -6,6 +6,7 @@ import Link from "next/link";
 import MobileNumberInput from "@/components/MobileNumberInput";
 import OtpDigitInput from "@/components/OtpDigitInput";
 import { homeRouteForRole } from "@/lib/constants";
+import { startNavProgress } from "@/lib/nav-progress";
 
 type Props = {
   purpose: "SIGNUP" | "LOGIN";
@@ -76,12 +77,21 @@ export default function OtpAuthForm({ purpose }: Props) {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error);
+        setLoading(false);
         return;
       }
+      // Deliberately leave loading=true (and don't touch it again) rather
+      // than resetting it here — router.push() returns before the new
+      // route has actually rendered, so clearing it now would briefly
+      // re-enable the button while the redirect is still in flight, which
+      // is exactly what was causing the double-click. The form unmounts
+      // once navigation lands, so there's nothing to reset it back for.
+      startNavProgress();
       router.push(homeRouteForRole(data.user?.role ?? "CUSTOMER"));
       router.refresh();
-    } finally {
+    } catch {
       setLoading(false);
+      setError("Something went wrong. Please try again.");
     }
   }
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { notificationIcon, formatRelativeTime } from "./notification-icons";
+import { startNavProgress } from "@/lib/nav-progress";
 
 type Notification = {
   id: string;
@@ -27,7 +28,10 @@ export default function NotificationRow({ notification }: { notification: Notifi
 
   function handleClick() {
     markRead();
-    if (notification.link) router.push(notification.link);
+    if (notification.link) {
+      startNavProgress();
+      router.push(notification.link);
+    }
   }
 
   return (

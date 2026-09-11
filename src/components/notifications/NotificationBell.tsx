@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
 import { notificationIcon, formatRelativeTime } from "./notification-icons";
+import { startNavProgress } from "@/lib/nav-progress";
 
 type Notification = {
   id: string;
@@ -51,6 +52,7 @@ export default function NotificationBell() {
     if (!n.isRead) markRead(n.id);
     if (n.link) {
       setOpen(false);
+      startNavProgress();
       router.push(n.link);
     }
   }

@@ -17,8 +17,8 @@ import {
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING_PAYMENT: "Payment pending",
-  CONFIRMED: "Payment confirmed — awaiting approval",
-  APPROVED: "Approved — awaiting walker assignment",
+  CONFIRMED: "Payment confirmed — awaiting walker assignment",
+  APPROVED: "Awaiting walker assignment",
   WALKER_ASSIGNED: "Walker assigned",
   ACTIVE: "Active",
   COMPLETED: "Completed",

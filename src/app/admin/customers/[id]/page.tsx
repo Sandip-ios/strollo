@@ -41,7 +41,7 @@ export default async function AdminCustomerDetailPage({ params }: { params: { id
     <main className="min-h-screen bg-paper">
       <AdminHeader active="/admin/customers" />
       <div className="mx-auto max-w-2xl px-6 py-10 sm:px-10">
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="font-display text-2xl font-semibold text-ink">
               {customer.name ?? customer.mobileNumber}

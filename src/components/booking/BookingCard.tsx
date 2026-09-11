@@ -15,8 +15,8 @@ type Booking = {
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING_PAYMENT: "Payment pending",
-  CONFIRMED: "Payment confirmed — awaiting approval",
-  APPROVED: "Approved — awaiting walker",
+  CONFIRMED: "Awaiting walker",
+  APPROVED: "Awaiting walker",
   WALKER_ASSIGNED: "Walker assigned",
   ACTIVE: "Active",
   COMPLETED: "Completed",
@@ -47,16 +47,18 @@ export default function BookingCard({ booking }: { booking: Booking }) {
       href={`/bookings/${booking.id}`}
       className="block rounded-xl border border-sand bg-white p-5 transition hover:border-navy-300 hover:shadow-sm"
     >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-semibold text-ink">
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-ink">
             {booking.bookingDogs.map((bd) => bd.dog.name).join(", ")}
           </p>
-          <p className="text-xs text-ink/50">
+          <p className="truncate text-xs text-ink/50">
             {booking.address.label} · {booking.address.city}
           </p>
         </div>
-        <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_TONES[booking.status]}`}>
+        <span
+          className={`inline-block shrink-0 self-start whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_TONES[booking.status]}`}
+        >
           {STATUS_LABELS[booking.status]}
         </span>
       </div>

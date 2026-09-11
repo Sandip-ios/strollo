@@ -3,7 +3,6 @@ import { LayoutDashboard, CalendarCheck, PawPrint, MapPin, User } from "lucide-r
 import Logo from "@/components/brand/Logo";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/notifications/NotificationBell";
-import MobileMenuButton from "@/components/layout/MobileMenuButton";
 
 const NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -42,12 +41,12 @@ export default function AppHeader({ active }: { active?: string }) {
           </nav>
           <div className="flex items-center gap-3">
             <NotificationBell />
-            <div className="hidden sm:block">
+            <span className="hidden sm:block">
               <LogoutButton />
-            </div>
-            <div className="sm:hidden">
-              <MobileMenuButton />
-            </div>
+            </span>
+            <span className="sm:hidden">
+              <LogoutButton iconOnly />
+            </span>
           </div>
         </div>
       </header>

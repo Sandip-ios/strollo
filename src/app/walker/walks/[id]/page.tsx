@@ -59,7 +59,7 @@ export default async function WalkerWalkDetailPage({ params }: { params: { id: s
             <Detail label="Owner" value={`${walk.booking.customer.name ?? "—"} · ${walk.booking.customer.mobileNumber}`} />
             <Detail label="Area" value={address.serviceArea?.name ?? address.city} />
           </div>
-          <div className="mt-4 flex items-start justify-between gap-3 border-t border-sand pt-4">
+          <div className="mt-4 flex flex-col gap-3 border-t border-sand pt-4 sm:flex-row sm:items-start sm:justify-between">
             <Detail
               label="Address"
               value={`${address.houseNumber}, ${address.label} — ${address.line1}${address.line2 ? `, ${address.line2}` : ""}, ${address.city}`}
@@ -68,7 +68,7 @@ export default async function WalkerWalkDetailPage({ params }: { params: { id: s
               href={directionsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-navy-200 px-3 py-2 text-xs font-semibold text-navy-600 transition hover:bg-navy-50"
+              className="flex w-full shrink-0 items-center justify-center gap-1.5 rounded-lg border border-navy-200 px-3 py-2 text-xs font-semibold text-navy-600 transition hover:bg-navy-50 sm:w-auto"
             >
               <Navigation className="h-3.5 w-3.5" strokeWidth={2} />
               Navigate

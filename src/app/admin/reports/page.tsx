@@ -76,7 +76,7 @@ export default async function AdminReportsPage({
     <main className="min-h-screen bg-paper">
       <AdminHeader active="/admin/reports" />
       <div className="mx-auto max-w-4xl px-6 py-10 sm:px-10">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-display text-2xl font-semibold text-ink">Reports</h1>
             <p className="mt-1 text-sm text-ink/60">
@@ -86,7 +86,7 @@ export default async function AdminReportsPage({
           {tab !== "overview" && (
             <a
               href={`/api/admin/reports/export${qs({})}`}
-              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-navy-200 px-4 py-2 text-sm font-semibold text-navy-600 transition hover:bg-navy-50"
+              className="flex w-full shrink-0 items-center justify-center gap-1.5 rounded-lg border border-navy-200 px-4 py-2 text-sm font-semibold text-navy-600 transition hover:bg-navy-50 sm:w-auto"
             >
               <Download className="h-4 w-4" strokeWidth={2} />
               Download CSV

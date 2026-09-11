@@ -32,7 +32,7 @@ export default async function BookingsPage() {
     <main className="min-h-screen bg-paper pb-20 sm:pb-0">
       <AppHeader active="/bookings" />
       <div className="mx-auto max-w-3xl px-6 py-10 sm:px-10">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-display text-2xl font-semibold text-ink">My Bookings</h1>
             <p className="mt-1 text-sm text-ink/60">
@@ -41,7 +41,7 @@ export default async function BookingsPage() {
           </div>
           <Link
             href="/book"
-            className="rounded-lg bg-navy-600 px-4 py-2 text-sm font-semibold text-paper transition hover:bg-navy-700"
+            className="w-full rounded-lg bg-navy-600 px-4 py-2 text-center text-sm font-semibold text-paper transition hover:bg-navy-700 sm:w-auto"
           >
             + Book a walk
           </Link>

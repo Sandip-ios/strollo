@@ -337,13 +337,13 @@ export default async function DashboardPage() {
         </div>
 
         {currentBooking && (
-          <div className="mt-6 flex items-center justify-between gap-3 rounded-xl border border-dashed border-sand bg-white/60 px-5 py-4">
+          <div className="mt-6 flex flex-col items-start gap-3 rounded-xl border border-dashed border-sand bg-white/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-ink/60">
-              Another dog to walk, or want to plan ahead? You can book another walk anytime.
+              Another dog to walk? You can book anytime.
             </p>
             <Link
               href="/book"
-              className="flex shrink-0 items-center gap-1.5 rounded-lg bg-navy-600 px-4 py-2 text-sm font-semibold text-paper transition hover:bg-navy-700"
+              className="flex w-full shrink-0 items-center justify-center gap-1.5 rounded-lg bg-navy-600 px-4 py-2 text-sm font-semibold text-paper transition hover:bg-navy-700 sm:w-auto"
             >
               <Plus className="h-4 w-4" strokeWidth={2.5} />
               Book another walk

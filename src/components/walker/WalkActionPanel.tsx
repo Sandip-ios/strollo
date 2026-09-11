@@ -8,6 +8,7 @@ import WalkTimeline, { type TimelineEvent } from "./WalkTimeline";
 import { computeRouteDistanceMeters, type RoutePoint } from "@/lib/geo";
 import { staticMapUrl } from "@/lib/static-map";
 import { WALK_MOODS, type WalkEventTypeValue } from "@/lib/walk-events";
+import { startNavProgress } from "@/lib/nav-progress";
 
 type Props = {
   walkId: string;
@@ -113,10 +114,12 @@ export default function WalkActionPanel({ walkId, status, startTime, endTime, in
       const data = await res.json();
       if (!res.ok) {
         setError(data.error);
+        setLoading(false);
         return;
       }
+      startNavProgress();
       router.refresh();
-    } finally {
+    } catch {
       setLoading(false);
     }
   }
@@ -133,11 +136,16 @@ export default function WalkActionPanel({ walkId, status, startTime, endTime, in
       const data = await res.json();
       if (!res.ok) {
         setError(data.error);
+        setLoading(false);
         return;
       }
+      // Loading stays true (button stays disabled) through the redirect —
+      // clearing it here would briefly re-enable "Complete walk" while
+      // navigation is still in flight.
+      startNavProgress();
       router.push("/walker");
       router.refresh();
-    } finally {
+    } catch {
       setLoading(false);
     }
   }
