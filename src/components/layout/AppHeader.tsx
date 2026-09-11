@@ -82,12 +82,12 @@ export default function AppHeader({ active }: { active?: string }) {
                 }`}
               >
                 <link.icon
-                  className={`h-5 w-5 ${isActive ? "text-ink" : "text-ink/40"}`}
+                  className={`h-5 w-5 ${isActive ? "text-ink" : "text-ink/60"}`}
                   strokeWidth={1.75}
                   fill={isActive ? "currentColor" : "none"}
                 />
               </span>
-              <span className={`text-[11px] font-semibold ${isActive ? "text-ink" : "text-ink/40"}`}>
+              <span className={`whitespace-nowrap text-[11px] font-semibold ${isActive ? "text-ink" : "text-ink/60"}`}>
                 {link.label}
               </span>
               <span className={`h-1 w-1 rounded-full ${isActive ? "bg-navy-600" : "bg-transparent"}`} />
@@ -99,7 +99,12 @@ export default function AppHeader({ active }: { active?: string }) {
           <span className="absolute -top-7 flex h-14 w-14 items-center justify-center rounded-full bg-navy-600 text-paper shadow-lg ring-4 ring-white transition hover:bg-navy-700">
             <PawPrint className="h-6 w-6" strokeWidth={2} />
           </span>
-          <span className="mt-9 pb-2.5 text-[11px] font-semibold text-navy-600">{BOOK_LINK.label}</span>
+          {/* mt-12 lines this up with the other tabs' labels: they sit at
+              py-3 (12px) + icon pill h-8 (32px) + gap-1 (4px) = 48px from
+              the row's top edge, same as this 48px margin. */}
+          <span className="mt-12 whitespace-nowrap pb-3 text-[11px] font-semibold text-navy-600">
+            {BOOK_LINK.label}
+          </span>
         </Link>
 
         {MOBILE_NAV_LINKS.slice(2).map((link) => {
@@ -112,12 +117,12 @@ export default function AppHeader({ active }: { active?: string }) {
                 }`}
               >
                 <link.icon
-                  className={`h-5 w-5 ${isActive ? "text-ink" : "text-ink/40"}`}
+                  className={`h-5 w-5 ${isActive ? "text-ink" : "text-ink/60"}`}
                   strokeWidth={1.75}
                   fill={isActive ? "currentColor" : "none"}
                 />
               </span>
-              <span className={`text-[11px] font-semibold ${isActive ? "text-ink" : "text-ink/40"}`}>
+              <span className={`whitespace-nowrap text-[11px] font-semibold ${isActive ? "text-ink" : "text-ink/60"}`}>
                 {link.label}
               </span>
               <span className={`h-1 w-1 rounded-full ${isActive ? "bg-navy-600" : "bg-transparent"}`} />
