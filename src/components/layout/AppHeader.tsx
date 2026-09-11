@@ -24,7 +24,7 @@ const MOBILE_NAV_LINKS = [
   { href: "/profile", label: "Profile", icon: User },
 ];
 
-const BOOK_LINK = { href: "/book", label: "Book a walk" };
+const BOOK_LINK = { href: "/book", label: "Book a Walk" };
 
 export default function AppHeader({ active }: { active?: string }) {
   return (
@@ -81,9 +81,14 @@ export default function AppHeader({ active }: { active?: string }) {
                   isActive ? "bg-sky-100" : ""
                 }`}
               >
+                {/* strokeWidth 0 when filled — some icons (Home) have an
+                    internal closed sub-path (the door) that otherwise
+                    gets its own visible outline stroke even though it's
+                    the same fill color as the body, leaving a stray seam
+                    line inside what should read as one solid silhouette. */}
                 <link.icon
                   className={`h-[25px] w-[25px] ${isActive ? "text-ink" : "text-ink/60"}`}
-                  strokeWidth={1.75}
+                  strokeWidth={isActive ? 0 : 1.75}
                   fill={isActive ? "currentColor" : "none"}
                 />
               </span>
@@ -96,7 +101,7 @@ export default function AppHeader({ active }: { active?: string }) {
         })}
 
         <Link href={BOOK_LINK.href} className="relative flex flex-col items-center">
-          <span className="absolute -top-8 flex h-16 w-16 items-center justify-center rounded-full bg-navy-600 text-paper shadow-lg ring-4 ring-white transition hover:bg-navy-700">
+          <span className="absolute -top-9 flex h-16 w-16 items-center justify-center rounded-full bg-navy-600 text-paper shadow-lg ring-4 ring-white transition hover:bg-navy-700">
             <PawPrint className="h-[29px] w-[29px]" strokeWidth={1.5} fill="currentColor" />
           </span>
           {/* A tight, fixed gap below the circle — not lined up with the
@@ -116,9 +121,14 @@ export default function AppHeader({ active }: { active?: string }) {
                   isActive ? "bg-sky-100" : ""
                 }`}
               >
+                {/* strokeWidth 0 when filled — some icons (Home) have an
+                    internal closed sub-path (the door) that otherwise
+                    gets its own visible outline stroke even though it's
+                    the same fill color as the body, leaving a stray seam
+                    line inside what should read as one solid silhouette. */}
                 <link.icon
                   className={`h-[25px] w-[25px] ${isActive ? "text-ink" : "text-ink/60"}`}
-                  strokeWidth={1.75}
+                  strokeWidth={isActive ? 0 : 1.75}
                   fill={isActive ? "currentColor" : "none"}
                 />
               </span>
