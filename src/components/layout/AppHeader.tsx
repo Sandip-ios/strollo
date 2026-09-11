@@ -1,20 +1,26 @@
 import Link from "next/link";
-import { LayoutDashboard, Home, CalendarCheck, Dog, PawPrint, User } from "lucide-react";
+import { LayoutDashboard, Home, CalendarCheck, Dog, PawPrint, MapPin, User } from "lucide-react";
 import Logo from "@/components/brand/Logo";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/notifications/NotificationBell";
 
-// Addresses moved off the primary nav into Profile — five slots is
-// already a full bottom tab bar once "Book a walk" takes the center one,
-// and address management isn't a frequent-enough action to hold a slot
-// over that.
-// mobileIcon lets the floating bottom bar use a different (bolder, more
-// glanceable) icon than the desktop top nav for the same link, without
-// duplicating href/label in two places.
-const NAV_LINKS = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard, mobileIcon: Home },
+// Desktop keeps the original, plain top nav untouched — Addresses included.
+const DESKTOP_NAV_LINKS = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/bookings", label: "My Bookings", icon: CalendarCheck },
+  { href: "/dogs", label: "My Dogs", icon: PawPrint },
+  { href: "/addresses", label: "Addresses", icon: MapPin },
+  { href: "/profile", label: "Profile", icon: User },
+];
+
+// Mobile gets its own bottom tab bar, styled and structured independently
+// from desktop: "Book a walk" takes the center slot as an elevated
+// button, Addresses is dropped (reachable from Profile instead) since
+// five slots is already full once that center button takes one.
+const MOBILE_NAV_LINKS = [
+  { href: "/dashboard", label: "Home", icon: Home },
   { href: "/bookings", label: "Bookings", icon: CalendarCheck },
-  { href: "/dogs", label: "My Dogs", icon: PawPrint, mobileIcon: Dog },
+  { href: "/dogs", label: "My Dogs", icon: Dog },
   { href: "/profile", label: "Profile", icon: User },
 ];
 
@@ -29,37 +35,13 @@ export default function AppHeader({ active }: { active?: string }) {
             <Logo variant="full" className="h-auto w-28" />
           </Link>
           <nav className="hidden items-center gap-6 sm:flex">
-            {NAV_LINKS.slice(0, 2).map((link) => {
+            {DESKTOP_NAV_LINKS.map((link) => {
               const isActive = active === link.href;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-1.5 whitespace-nowrap border-b-2 py-1 text-sm font-medium transition ${
-                    isActive
-                      ? "border-navy-600 text-navy-600"
-                      : "border-transparent text-ink/80 hover:text-ink"
-                  }`}
-                >
-                  <link.icon className="h-4 w-4" strokeWidth={1.75} />
-                  {link.label}
-                </Link>
-              );
-            })}
-            <Link
-              href={BOOK_LINK.href}
-              className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-navy-600 px-4 py-1.5 text-sm font-semibold text-paper transition hover:bg-navy-700"
-            >
-              <PawPrint className="h-4 w-4" strokeWidth={2} />
-              {BOOK_LINK.label}
-            </Link>
-            {NAV_LINKS.slice(2).map((link) => {
-              const isActive = active === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`flex items-center gap-1.5 whitespace-nowrap border-b-2 py-1 text-sm font-medium transition ${
+                  className={`flex items-center gap-1.5 border-b-2 py-1 text-sm font-medium transition ${
                     isActive
                       ? "border-navy-600 text-navy-600"
                       : "border-transparent text-ink/80 hover:text-ink"
@@ -90,9 +72,8 @@ export default function AppHeader({ active }: { active?: string }) {
         className="fixed inset-x-3 z-40 grid grid-cols-5 rounded-[28px] border border-sand/60 bg-white shadow-[0_10px_30px_rgba(16,37,64,0.14)] sm:hidden"
         style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
       >
-        {NAV_LINKS.slice(0, 2).map((link) => {
+        {MOBILE_NAV_LINKS.slice(0, 2).map((link) => {
           const isActive = active === link.href;
-          const Icon = link.mobileIcon ?? link.icon;
           return (
             <Link key={link.href} href={link.href} className="flex flex-col items-center gap-1 py-3">
               <span
@@ -100,7 +81,7 @@ export default function AppHeader({ active }: { active?: string }) {
                   isActive ? "bg-sky-100" : ""
                 }`}
               >
-                <Icon
+                <link.icon
                   className={`h-5 w-5 ${isActive ? "text-ink" : "text-ink/40"}`}
                   strokeWidth={1.75}
                   fill={isActive ? "currentColor" : "none"}
@@ -121,9 +102,8 @@ export default function AppHeader({ active }: { active?: string }) {
           <span className="mt-9 pb-2.5 text-[11px] font-semibold text-navy-600">{BOOK_LINK.label}</span>
         </Link>
 
-        {NAV_LINKS.slice(2).map((link) => {
+        {MOBILE_NAV_LINKS.slice(2).map((link) => {
           const isActive = active === link.href;
-          const Icon = link.mobileIcon ?? link.icon;
           return (
             <Link key={link.href} href={link.href} className="flex flex-col items-center gap-1 py-3">
               <span
@@ -131,7 +111,7 @@ export default function AppHeader({ active }: { active?: string }) {
                   isActive ? "bg-sky-100" : ""
                 }`}
               >
-                <Icon
+                <link.icon
                   className={`h-5 w-5 ${isActive ? "text-ink" : "text-ink/40"}`}
                   strokeWidth={1.75}
                   fill={isActive ? "currentColor" : "none"}
