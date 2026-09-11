@@ -58,7 +58,7 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
   const ongoingWalk = booking.walks.find((w) => w.status === "ON_GOING");
 
   return (
-    <main className="min-h-screen bg-paper pb-20 sm:pb-0">
+    <main className="min-h-screen bg-paper pb-28 sm:pb-0">
       <AppHeader active="/bookings" />
       <div className="mx-auto max-w-2xl px-6 py-10 sm:px-10">
         <h1 className="font-display text-2xl font-semibold text-ink">{booking.plan.name}</h1>

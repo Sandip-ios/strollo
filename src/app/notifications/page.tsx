@@ -23,7 +23,7 @@ export default async function NotificationsPage() {
       : null;
 
   return (
-    <main className="min-h-screen bg-paper pb-20 sm:pb-0">
+    <main className="min-h-screen bg-paper pb-28 sm:pb-0">
       {session.role === "ADMIN" ? (
         <AdminHeader />
       ) : session.role === "WALKER" ? (

@@ -35,7 +35,7 @@ export default async function BookPage() {
   }));
 
   return (
-    <main className="min-h-screen bg-paper pb-20 sm:pb-0">
+    <main className="min-h-screen bg-paper pb-28 sm:pb-0">
       <AppHeader active="/book" />
       <div className="mx-auto max-w-2xl px-6 py-10 sm:px-10">
         <h1 className="font-display text-2xl font-semibold text-ink">Book a Walk</h1>

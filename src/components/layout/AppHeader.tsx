@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, CalendarCheck, PawPrint, User } from "lucide-react";
+import { LayoutDashboard, Home, CalendarCheck, Dog, PawPrint, User } from "lucide-react";
 import Logo from "@/components/brand/Logo";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/notifications/NotificationBell";
@@ -8,10 +8,13 @@ import NotificationBell from "@/components/notifications/NotificationBell";
 // already a full bottom tab bar once "Book a walk" takes the center one,
 // and address management isn't a frequent-enough action to hold a slot
 // over that.
+// mobileIcon lets the floating bottom bar use a different (bolder, more
+// glanceable) icon than the desktop top nav for the same link, without
+// duplicating href/label in two places.
 const NAV_LINKS = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard, mobileIcon: Home },
   { href: "/bookings", label: "Bookings", icon: CalendarCheck },
-  { href: "/dogs", label: "My Dogs", icon: PawPrint },
+  { href: "/dogs", label: "My Dogs", icon: PawPrint, mobileIcon: Dog },
   { href: "/profile", label: "Profile", icon: User },
 ];
 
@@ -80,23 +83,32 @@ export default function AppHeader({ active }: { active?: string }) {
         </div>
       </header>
 
-      {/* Fixed bottom tab bar — mobile only. "Book a walk" sits in the
-          center slot as an elevated circular button rather than a plain
-          tab, since it's the one action worth making impossible to miss. */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-sand bg-white pb-[env(safe-area-inset-bottom)] sm:hidden">
+      {/* Floating bottom tab bar — mobile only, styled independently from
+          the desktop top nav. "Book a walk" sits in the center slot as an
+          elevated circular button rather than a plain tab. */}
+      <nav
+        className="fixed inset-x-3 z-40 grid grid-cols-5 rounded-[28px] border border-sand/60 bg-white shadow-[0_10px_30px_rgba(16,37,64,0.14)] sm:hidden"
+        style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+      >
         {NAV_LINKS.slice(0, 2).map((link) => {
           const isActive = active === link.href;
+          const Icon = link.mobileIcon ?? link.icon;
           return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition"
-            >
-              <link.icon
-                className={`h-5 w-5 ${isActive ? "text-navy-600" : "text-ink/50"}`}
-                strokeWidth={isActive ? 2.25 : 1.75}
-              />
-              <span className={isActive ? "text-navy-600" : "text-ink/50"}>{link.label}</span>
+            <Link key={link.href} href={link.href} className="flex flex-col items-center gap-1 py-3">
+              <span
+                className={`flex h-8 w-14 items-center justify-center rounded-full transition ${
+                  isActive ? "bg-sky-100" : ""
+                }`}
+              >
+                <Icon
+                  className={`h-5 w-5 ${isActive ? "text-ink" : "text-ink/40"}`}
+                  strokeWidth={1.75}
+                  fill={isActive ? "currentColor" : "none"}
+                />
+              </span>
+              <span className={`text-[11px] font-semibold ${isActive ? "text-ink" : "text-ink/40"}`}>
+                {link.label}
+              </span>
               <span className={`h-1 w-1 rounded-full ${isActive ? "bg-navy-600" : "bg-transparent"}`} />
             </Link>
           );
@@ -111,17 +123,23 @@ export default function AppHeader({ active }: { active?: string }) {
 
         {NAV_LINKS.slice(2).map((link) => {
           const isActive = active === link.href;
+          const Icon = link.mobileIcon ?? link.icon;
           return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition"
-            >
-              <link.icon
-                className={`h-5 w-5 ${isActive ? "text-navy-600" : "text-ink/50"}`}
-                strokeWidth={isActive ? 2.25 : 1.75}
-              />
-              <span className={isActive ? "text-navy-600" : "text-ink/50"}>{link.label}</span>
+            <Link key={link.href} href={link.href} className="flex flex-col items-center gap-1 py-3">
+              <span
+                className={`flex h-8 w-14 items-center justify-center rounded-full transition ${
+                  isActive ? "bg-sky-100" : ""
+                }`}
+              >
+                <Icon
+                  className={`h-5 w-5 ${isActive ? "text-ink" : "text-ink/40"}`}
+                  strokeWidth={1.75}
+                  fill={isActive ? "currentColor" : "none"}
+                />
+              </span>
+              <span className={`text-[11px] font-semibold ${isActive ? "text-ink" : "text-ink/40"}`}>
+                {link.label}
+              </span>
               <span className={`h-1 w-1 rounded-full ${isActive ? "bg-navy-600" : "bg-transparent"}`} />
             </Link>
           );

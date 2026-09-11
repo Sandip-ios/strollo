@@ -29,7 +29,7 @@ export default async function BookingsPage() {
   const completed = bookings.filter((b) => ["COMPLETED", "EXPIRED", "CANCELLED"].includes(b.status));
 
   return (
-    <main className="min-h-screen bg-paper pb-20 sm:pb-0">
+    <main className="min-h-screen bg-paper pb-28 sm:pb-0">
       <AppHeader active="/bookings" />
       <div className="mx-auto max-w-3xl px-6 py-10 sm:px-10">
         <div className="mb-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">

@@ -16,18 +16,13 @@ export default async function ProfilePage() {
   if (!user) redirect("/login");
 
   return (
-    <main className="min-h-screen bg-paper pb-20 sm:pb-0">
+    <main className="min-h-screen bg-paper pb-28 sm:pb-0">
       <AppHeader active="/profile" />
       <div className="mx-auto max-w-3xl px-6 py-10 sm:px-10">
         <h1 className="font-display text-2xl font-semibold text-ink">Profile</h1>
-        <p className="mb-8 mt-1 text-sm text-ink/60">Manage your account details.</p>
-        <ProfileForm
-          initialName={user.name ?? ""}
-          initialEmail={user.email ?? ""}
-          mobileNumber={user.mobileNumber}
-        />
+        <p className="mb-6 mt-1 text-sm text-ink/60">Manage your account details.</p>
 
-        <div className="mt-8 max-w-md space-y-3">
+        <div className="mb-8 max-w-md space-y-3">
           <Link
             href="/addresses"
             className="flex items-center justify-between rounded-xl border border-sand bg-white p-4 transition hover:border-navy-300 hover:shadow-sm"
@@ -53,6 +48,12 @@ export default async function ProfilePage() {
             <ArrowRight className="h-4 w-4 text-ink/40" />
           </Link>
         </div>
+
+        <ProfileForm
+          initialName={user.name ?? ""}
+          initialEmail={user.email ?? ""}
+          mobileNumber={user.mobileNumber}
+        />
       </div>
     </main>
   );

@@ -150,7 +150,7 @@ export default async function DashboardPage() {
     : null;
 
   return (
-    <main className="min-h-screen bg-paper pb-20 sm:pb-0">
+    <main className="min-h-screen bg-paper pb-28 sm:pb-0">
       <AppHeader active="/dashboard" />
 
       <div className="mx-auto max-w-6xl px-6 py-8 sm:px-10">
