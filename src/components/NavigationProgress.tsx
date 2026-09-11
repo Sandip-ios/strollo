@@ -77,7 +77,7 @@ export default function NavigationProgress() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center bg-paper/70 backdrop-blur-[2px]">
-      <PawLoader />
+      <PawLoader size="lg" />
     </div>
   );
 }
