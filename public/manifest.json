@@ -1,0 +1,13 @@
+{
+  "name": "Strollo — Happy Steps, Happy Dogs",
+  "short_name": "Strollo",
+  "description": "Book trusted, professional dog walkers near you.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f9fb",
+  "theme_color": "#243b5a",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
