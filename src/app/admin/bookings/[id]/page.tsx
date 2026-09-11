@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDate } from "@/lib/format-date";
 import AdminHeader from "@/components/layout/AdminHeader";
 import AssignWalkerPanel from "@/components/admin/AssignWalkerPanel";
 import CancelBookingButton from "@/components/admin/CancelBookingButton";
@@ -24,10 +25,6 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const CANCELLABLE_STATUSES = ["CONFIRMED", "APPROVED", "WALKER_ASSIGNED", "ACTIVE"];
-
-function formatDate(d: Date) {
-  return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}
 
 export default async function AdminBookingDetailPage({ params }: { params: { id: string } }) {
   const session = getSession();

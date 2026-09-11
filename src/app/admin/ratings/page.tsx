@@ -3,11 +3,8 @@ import { Star } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { homeRouteForRole } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
+import { formatDate } from "@/lib/format-date";
 import AdminHeader from "@/components/layout/AdminHeader";
-
-function formatDate(d: Date) {
-  return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}
 
 export default async function AdminRatingsPage() {
   const session = getSession();

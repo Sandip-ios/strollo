@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDate } from "@/lib/format-date";
 import AppHeader from "@/components/layout/AppHeader";
 import CancelWalkButton from "@/components/booking/CancelWalkButton";
 import WalkDetails from "@/components/booking/WalkDetails";
@@ -26,13 +27,6 @@ const STATUS_LABELS: Record<string, string> = {
   CANCELLED: "Cancelled",
 };
 
-function formatDate(d: Date) {
-  return new Date(d).toLocaleDateString("en-IN", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
-}
 
 export default async function BookingDetailPage({ params }: { params: { id: string } }) {
   const session = getSession();

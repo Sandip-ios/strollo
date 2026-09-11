@@ -11,6 +11,7 @@ import {
   Bell,
   type LucideIcon,
 } from "lucide-react";
+import { formatDate } from "@/lib/format-date";
 
 export const NOTIFICATION_ICONS: Record<string, LucideIcon> = {
   BOOKING_CONFIRMED: CalendarCheck,
@@ -40,5 +41,5 @@ export function formatRelativeTime(date: Date | string): string {
   if (diffHr < 24) return `${diffHr}h ago`;
   const diffDay = Math.round(diffHr / 24);
   if (diffDay < 7) return `${diffDay}d ago`;
-  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  return formatDate(d);
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatDate } from "@/lib/format-date";
 
 type Booking = {
   id: string;
@@ -34,10 +35,6 @@ const STATUS_TONES: Record<string, string> = {
   EXPIRED: "bg-red-100 text-red-700",
   CANCELLED: "bg-red-100 text-red-700",
 };
-
-function formatDate(d: Date) {
-  return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}
 
 export default function BookingCard({ booking }: { booking: Booking }) {
   const completedWalks = booking.walks.filter((w) => w.status === "COMPLETED").length;

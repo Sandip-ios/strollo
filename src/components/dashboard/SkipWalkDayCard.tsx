@@ -1,12 +1,9 @@
 import { Umbrella } from "lucide-react";
 import CancelWalkButton from "@/components/booking/CancelWalkButton";
 import { canCancelWalk, CANCELLATION_LEAD_HOURS } from "@/lib/constants";
+import { formatDate } from "@/lib/format-date";
 
 type UpcomingWalk = { id: string; scheduledDate: Date };
-
-function formatDate(d: Date) {
-  return new Date(d).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
-}
 
 export default function SkipWalkDayCard({
   bookingId,

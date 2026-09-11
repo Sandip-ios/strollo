@@ -7,6 +7,7 @@ import Image from "next/image";
 import { PawPrint, Sun, CloudSun, Sunset, Moon } from "lucide-react";
 import { WALK_SLOTS, WALK_DURATION_MINUTES } from "@/lib/constants";
 import { startNavProgress } from "@/lib/nav-progress";
+import { formatDate } from "@/lib/format-date";
 import DogFormModal from "@/components/dogs/DogFormModal";
 import AddressFormModal from "@/components/addresses/AddressFormModal";
 
@@ -539,7 +540,7 @@ export default function BookingWizard({
             />
             <ReviewRow label="Slot" value={WALK_SLOTS.find((s) => s.value === slot)?.label ?? ""} />
             <ReviewRow label="Walk duration" value={`${WALK_DURATION_MINUTES} minutes per walk`} />
-            <ReviewRow label="Start date" value={startDate} />
+            <ReviewRow label="Start date" value={formatDate(startDate)} />
             <div className="border-t border-sand pt-3">
               <ReviewRow
                 label={plan?.name ?? ""}

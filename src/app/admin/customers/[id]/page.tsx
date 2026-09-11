@@ -4,13 +4,10 @@ import { PawPrint } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { homeRouteForRole } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
+import { formatDate } from "@/lib/format-date";
 import AdminHeader from "@/components/layout/AdminHeader";
 import AdminBookingCard from "@/components/admin/AdminBookingCard";
 import CustomerStatusToggle from "@/components/admin/CustomerStatusToggle";
-
-function formatDate(d: Date) {
-  return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}
 
 export default async function AdminCustomerDetailPage({ params }: { params: { id: string } }) {
   const session = getSession();

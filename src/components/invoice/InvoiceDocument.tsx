@@ -3,6 +3,7 @@ import React from "react";
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { BUSINESS, stateCodeFor } from "@/lib/business";
 import { computeGstBreakdown } from "@/lib/gst";
+import { formatDate } from "@/lib/format-date";
 
 const LOGO_PATH = path.join(process.cwd(), "public", "logo.png");
 
@@ -117,9 +118,6 @@ function formatMoney(paise: number) {
   return `Rs. ${(paise / 100).toLocaleString("en-IN")}`;
 }
 
-function formatDate(d: Date) {
-  return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}
 
 export default function InvoiceDocument({ data }: { data: InvoiceData }) {
   const gst = computeGstBreakdown(data.amountPaise, data.customerState);

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, MapPinned, CheckCircle2 } from "lucide-react";
+import { formatDate } from "@/lib/format-date";
 
 type Walk = {
   id: string;
@@ -15,10 +16,6 @@ type Walk = {
     bookingDogs: { dog: { name: string } }[];
   };
 };
-
-function formatDate(d: Date) {
-  return new Date(d).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
-}
 
 function durationLabel(sec: number | null) {
   if (sec === null) return "—";

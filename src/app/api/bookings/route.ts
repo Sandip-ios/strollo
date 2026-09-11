@@ -5,6 +5,7 @@ import { createBookingSchema } from "@/modules/bookings/booking.schema";
 import { getPlanEndDate } from "@/lib/constants";
 import { getRazorpayClient, isRazorpayConfigured } from "@/lib/razorpay";
 import { getServiceAreaIdsWithActiveWalker, NOT_SERVING_CITY_MESSAGE, NO_WALKER_AVAILABLE_MESSAGE } from "@/lib/service-area";
+import { formatDate } from "@/lib/format-date";
 
 const ACTIVE_BOOKING_STATUSES = ["CONFIRMED", "APPROVED", "WALKER_ASSIGNED", "ACTIVE"] as const;
 
@@ -139,11 +140,9 @@ export async function POST(req: NextRequest) {
       .filter((bd) => dogIds.includes(bd.dogId))
       .map((bd) => bd.dog.name)
       .join(", ");
-    const fmt = (d: Date) =>
-      new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
     return NextResponse.json(
       {
-        error: `${conflictingDogNames} already ${dogIds.length > 1 ? "have" : "has"} an active booking from ${fmt(conflicting.startDate)} to ${fmt(conflicting.endDate)}. You can book a new plan once it ends.`,
+        error: `${conflictingDogNames} already ${dogIds.length > 1 ? "have" : "has"} an active booking from ${formatDate(conflicting.startDate)} to ${formatDate(conflicting.endDate)}. You can book a new plan once it ends.`,
       },
       { status: 409 }
     );

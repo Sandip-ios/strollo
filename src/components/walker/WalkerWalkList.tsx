@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, MapPinned } from "lucide-react";
 import { WALK_SLOTS } from "@/lib/constants";
+import { formatDate } from "@/lib/format-date";
 
 type Walk = {
   id: string;
@@ -26,10 +27,6 @@ const STATUS_TONES: Record<string, string> = {
   SCHEDULED: "bg-sand/60 text-ink/60",
   ON_GOING: "bg-navy-100 text-navy-700",
 };
-
-function formatDate(d: Date) {
-  return new Date(d).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
-}
 
 function dayLabel(d: Date): string {
   const today = new Date();

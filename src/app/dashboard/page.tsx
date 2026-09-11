@@ -22,6 +22,7 @@ import {
 import { getSession } from "@/lib/auth";
 import { homeRouteForRole, getWalkSlotStart, WALK_SLOTS } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
+import { formatDate } from "@/lib/format-date";
 import AppHeader from "@/components/layout/AppHeader";
 import LeashPath from "@/components/brand/LeashPath";
 import DogChip from "@/components/dashboard/DogChip";
@@ -39,9 +40,9 @@ const STATUS_PRIORITY: Record<string, number> = {
   COMPLETED: 5,
 };
 
-function formatDateLong(d: Date) {
-  return new Date(d).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-}
+// DD-MM-YYYY app-wide per the shared formatDate — this used to spell out
+// "Friday, 11 September 2026", now just delegates for consistency.
+const formatDateLong = formatDate;
 
 function slotCountdownLabel(scheduledDate: Date, slot: string): string {
   const start = getWalkSlotStart(scheduledDate, slot);

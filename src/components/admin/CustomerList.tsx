@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { formatDate } from "@/lib/format-date";
 
 type Customer = {
   id: string;
@@ -13,10 +14,6 @@ type Customer = {
   dogCount: number;
   bookingCount: number;
 };
-
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}
 
 export default function CustomerList({ customers }: { customers: Customer[] }) {
   const [query, setQuery] = useState("");

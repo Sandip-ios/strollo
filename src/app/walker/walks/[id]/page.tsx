@@ -5,12 +5,9 @@ import { ChevronLeft, Navigation, PawPrint, ShieldAlert } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { WALK_SLOTS, WALK_DURATION_MINUTES, homeRouteForRole } from "@/lib/constants";
+import { formatDate } from "@/lib/format-date";
 import WalkerHeader from "@/components/layout/WalkerHeader";
 import WalkActionPanel from "@/components/walker/WalkActionPanel";
-
-function formatDate(d: Date) {
-  return new Date(d).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short" });
-}
 
 export default async function WalkerWalkDetailPage({ params }: { params: { id: string } }) {
   const session = getSession();

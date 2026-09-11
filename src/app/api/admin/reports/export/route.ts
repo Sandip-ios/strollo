@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/guards";
 import { resolveDateRange, toDateInputValue, getWalkerReport, getDogReport, getCustomerReport, toCsv } from "@/lib/reports";
-
-function formatDate(d: Date) {
-  return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}
+import { formatDate } from "@/lib/format-date";
 
 export async function GET(req: NextRequest) {
   const { error } = requireAdmin();

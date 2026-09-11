@@ -4,6 +4,7 @@ import { Download } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { homeRouteForRole } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
+import { formatDate } from "@/lib/format-date";
 import AdminHeader from "@/components/layout/AdminHeader";
 import ReportBarList from "@/components/admin/ReportBarList";
 import {
@@ -42,10 +43,6 @@ function monthKey(d: Date) {
 function monthLabel(key: string) {
   const [y, m] = key.split("-").map(Number);
   return new Date(y, m - 1, 1).toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
-}
-
-function formatDate(d: Date) {
-  return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 }
 
 export default async function AdminReportsPage({
