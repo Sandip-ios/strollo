@@ -12,7 +12,7 @@ type Booking = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  CONFIRMED: "Needs approval",
+  CONFIRMED: "Needs a walker",
   APPROVED: "Needs walker",
   WALKER_ASSIGNED: "Walker assigned",
   ACTIVE: "Active",

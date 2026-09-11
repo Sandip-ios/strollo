@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { generateWalkDates } from "@/lib/constants";
-import { notifyByEmail } from "@/lib/email";
+import { notifyByEmail, sendEmail, emailShell, ADMIN_NOTIFICATION_EMAILS } from "@/lib/email";
+import { generateInvoicePdf } from "@/lib/invoice";
 
 type ConfirmResult =
   | { ok: true; alreadyConfirmed: boolean; walksScheduled: number }
@@ -87,24 +88,29 @@ export async function confirmBookingPayment(params: {
       }
     }
 
+    const admins = await tx.user.findMany({ where: { role: "ADMIN", deletedAt: null } });
+
     await tx.notification.createMany({
       data: [
-        {
-          userId: booking.customerId,
-          type: "PAYMENT_SUCCESSFUL",
-          title: "Payment successful",
-          message: `Your payment for the monthly plan was successful.`,
-        },
         {
           userId: booking.customerId,
           type: "BOOKING_CONFIRMED",
           title: "Booking confirmed",
           message:
-            `Your booking is confirmed with ${walkDates.length} walks scheduled. A walker will be assigned shortly.` +
+            `Your payment was successful — your booking is confirmed with ${walkDates.length} walks scheduled. A walker will be assigned shortly.` +
             (booking.carriedOverDays > 0
               ? ` Includes ${booking.carriedOverDays} extra day${booking.carriedOverDays === 1 ? "" : "s"} carried forward from cancelled walks.`
               : ""),
         },
+        // Every admin gets alerted so a new booking never sits unnoticed —
+        // tapping it takes them straight to the booking to assign a walker.
+        ...admins.map((admin) => ({
+          userId: admin.id,
+          type: "BOOKING_CONFIRMED" as const,
+          title: "New booking",
+          message: `${booking.customer.name ?? booking.customer.mobileNumber} booked ${walkDates.length} walks. It needs a walker assigned.`,
+          link: `/admin/bookings/${booking.id}`,
+        })),
       ],
     });
 
@@ -115,10 +121,29 @@ export async function confirmBookingPayment(params: {
     return { ok: true, alreadyConfirmed: true, walksScheduled: 0 };
   }
 
+  // The receipt PDF needs the payment row already marked SUCCESS, which
+  // just happened inside the transaction above — safe to generate now.
+  const invoice = await generateInvoicePdf(bookingId);
+
+  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+
   await notifyByEmail({
     email: booking.customer.email,
-    title: "Booking confirmed",
-    message: `Your payment was successful and your booking is confirmed with ${walkDates.length} walks scheduled. A walker will be assigned shortly.`,
+    title: "Booking & payment confirmed",
+    message: `Your payment was successful and your booking is confirmed with ${walkDates.length} walks scheduled. A walker will be assigned shortly. Your receipt is attached.`,
+    cta: { label: "View your booking", url: `${appUrl}/bookings/${booking.id}` },
+    attachments: invoice ? [{ filename: invoice.filename, content: invoice.buffer, contentType: "application/pdf" }] : undefined,
+  });
+
+  await sendEmail({
+    to: ADMIN_NOTIFICATION_EMAILS.join(", "),
+    subject: "New booking received",
+    html: emailShell(
+      "New booking received",
+      `${booking.customer.name ?? booking.customer.mobileNumber} (${booking.customer.mobileNumber}) booked ${walkDates.length} walks. It needs a walker assigned.`,
+      { label: "Assign a walker", url: `${appUrl}/admin/bookings/${booking.id}` }
+    ),
+    attachments: invoice ? [{ filename: invoice.filename, content: invoice.buffer, contentType: "application/pdf" }] : undefined,
   });
 
   return { ok: true, alreadyConfirmed: false, walksScheduled: walkDates.length };

@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { contactSchema } from "@/modules/contact/contact.schema";
-import { sendEmail } from "@/lib/email";
-import { CONTACT } from "@/lib/site";
+import { sendEmail, emailShell } from "@/lib/email";
+
+// Where contact-form submissions get routed — separate from CONTACT.email
+// in @/lib/site, which is the address shown publicly on the site.
+const CONTACT_FORM_TO = "hardikjee@gmail.com";
+const CONTACT_FORM_CC = "patelsandip8889@gmail.com";
 
 function escapeHtml(input: string): string {
   return input
@@ -24,19 +28,19 @@ export async function POST(req: NextRequest) {
 
   const { name, email, phone, message } = parsed.data;
 
+  const details = `
+    <p style="margin:0 0 4px;"><strong>Name:</strong> ${escapeHtml(name)}</p>
+    <p style="margin:0 0 4px;"><strong>Email:</strong> ${escapeHtml(email)}</p>
+    ${phone ? `<p style="margin:0 0 4px;"><strong>Phone:</strong> ${escapeHtml(phone)}</p>` : ""}
+    <p style="margin:16px 0 0; white-space: pre-wrap;">${escapeHtml(message)}</p>
+  `;
+
   await sendEmail({
-    to: CONTACT.email,
+    to: CONTACT_FORM_TO,
+    cc: CONTACT_FORM_CC,
     replyTo: email,
     subject: `New message from ${escapeHtml(name)} — Strollo contact form`,
-    html: `
-      <div style="font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; color: #1a1a2e;">
-        <p style="font-size: 20px; font-weight: 700; color: #243b5a; margin: 0 0 16px;">New contact form message</p>
-        <p style="font-size: 14px; margin: 0 0 4px;"><strong>Name:</strong> ${escapeHtml(name)}</p>
-        <p style="font-size: 14px; margin: 0 0 4px;"><strong>Email:</strong> ${escapeHtml(email)}</p>
-        ${phone ? `<p style="font-size: 14px; margin: 0 0 4px;"><strong>Phone:</strong> ${escapeHtml(phone)}</p>` : ""}
-        <p style="font-size: 14px; line-height: 1.6; margin-top: 16px; white-space: pre-wrap;">${escapeHtml(message)}</p>
-      </div>
-    `,
+    html: emailShell("New contact form message", details),
   });
 
   return NextResponse.json({ ok: true });

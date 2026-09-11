@@ -13,8 +13,7 @@ type Dog = {
   age: number;
   weightKg: number;
   gender: "MALE" | "FEMALE";
-  isVaccinated: boolean;
-  isRabiesVaccinated: boolean;
+  vaccinations: string[];
   temperament: string[];
   isRegisteredWithAMC: boolean;
   amcRegistrationNumber: string | null;
@@ -68,8 +67,7 @@ export default function DogList({ initialDogs }: Props) {
         age: String(editing.age),
         weightKg: String(editing.weightKg),
         gender: editing.gender,
-        isVaccinated: editing.isVaccinated,
-        isRabiesVaccinated: editing.isRabiesVaccinated,
+        vaccinations: editing.vaccinations,
         temperament: editing.temperament,
         isRegisteredWithAMC: editing.isRegisteredWithAMC,
         amcRegistrationNumber: editing.amcRegistrationNumber ?? "",
@@ -133,8 +131,9 @@ export default function DogList({ initialDogs }: Props) {
               </div>
 
               <div className="mt-3 flex flex-wrap gap-1.5">
-                {dog.isVaccinated && <Badge label="Vaccinated" tone="good" />}
-                {dog.isRabiesVaccinated && <Badge label="Rabies vaccine" tone="good" />}
+                {dog.vaccinations.map((name) => (
+                  <Badge key={name} label={name} tone="good" />
+                ))}
                 {dog.isRegisteredWithAMC && <Badge label="AMC registered" tone="good" />}
                 {dog.temperament.map((tag) => (
                   <Badge key={tag} label={tag} tone={tag === "Aggressive" ? "warning" : "neutral"} />

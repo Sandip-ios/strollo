@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AddressMapPicker from "@/components/maps/AddressMapPicker";
 
 export type AddressFormValues = {
@@ -15,6 +15,7 @@ export type AddressFormValues = {
   latitude: number | null;
   longitude: number | null;
   isDefault: boolean;
+  serviceAreaId: string;
 };
 
 const EMPTY: AddressFormValues = {
@@ -28,7 +29,11 @@ const EMPTY: AddressFormValues = {
   latitude: null,
   longitude: null,
   isDefault: false,
+  serviceAreaId: "",
 };
+
+type City = { id: string; name: string };
+type ServiceArea = { id: string; name: string; cityId: string };
 
 type Props = {
   initial?: AddressFormValues;
@@ -40,11 +45,33 @@ export default function AddressFormModal({ initial, onClose, onSaved }: Props) {
   const [form, setForm] = useState<AddressFormValues>(initial ?? EMPTY);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [cities, setCities] = useState<City[]>([]);
+  const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([]);
+  const [notListed, setNotListed] = useState(false);
+  const [cityId, setCityId] = useState("");
   const isEdit = Boolean(initial?.id);
+
+  useEffect(() => {
+    fetch("/api/service-options")
+      .then((res) => res.json())
+      .then((data) => {
+        setCities(data.cities ?? []);
+        setServiceAreas(data.serviceAreas ?? []);
+        if (initial?.city) {
+          const match = (data.cities ?? []).find((c: City) => c.name === initial.city);
+          if (match) setCityId(match.id);
+          else setNotListed(true);
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function update<K extends keyof AddressFormValues>(key: K, value: AddressFormValues[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
+
+  const areasForCity = serviceAreas.filter((a) => a.cityId === cityId);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -52,6 +79,18 @@ export default function AddressFormModal({ initial, onClose, onSaved }: Props) {
 
     if (form.latitude === null || form.longitude === null) {
       setError("Pick a location on the map so we know where to send the walker");
+      return;
+    }
+    if (!notListed && !cityId) {
+      setError("Select your city");
+      return;
+    }
+    if (!notListed && !form.serviceAreaId) {
+      setError("Select your area");
+      return;
+    }
+    if (notListed && !form.city.trim()) {
+      setError("Enter your city");
       return;
     }
 
@@ -65,12 +104,13 @@ export default function AddressFormModal({ initial, onClose, onSaved }: Props) {
           label: form.label,
           line1: form.line1,
           line2: form.line2,
-          city: form.city,
+          city: notListed ? form.city : cities.find((c) => c.id === cityId)?.name ?? "",
           state: form.state,
           pincode: form.pincode,
           latitude: form.latitude,
           longitude: form.longitude,
           isDefault: form.isDefault,
+          serviceAreaId: notListed ? "" : form.serviceAreaId,
         }),
       });
       const data = await res.json();
@@ -101,23 +141,114 @@ export default function AddressFormModal({ initial, onClose, onSaved }: Props) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <AddressMapPicker
-            value={
-              form.latitude !== null && form.longitude !== null
-                ? { lat: form.latitude, lng: form.longitude }
-                : null
-            }
-            onChange={(loc, parts) => {
-              update("latitude", loc.lat);
-              update("longitude", loc.lng);
-              if (parts?.label && !form.label) update("label", parts.label);
-              if (parts?.line1 && !form.line1) update("line1", parts.line1);
-              if (parts?.landmark && !form.line2) update("line2", parts.landmark);
-              if (parts?.city && !form.city) update("city", parts.city);
-              if (parts?.state && !form.state) update("state", parts.state);
-              if (parts?.pincode && !form.pincode) update("pincode", parts.pincode);
-            }}
-          />
+          <div className="rounded-lg border border-navy-200 bg-navy-50/50 p-4">
+            <p className="mb-3 text-sm font-semibold text-ink/80">
+              1. Where are you located?
+            </p>
+            {!notListed ? (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-ink/80">City</label>
+                  <select
+                    required
+                    value={cityId}
+                    onChange={(e) => {
+                      setCityId(e.target.value);
+                      update("serviceAreaId", "");
+                    }}
+                    className="w-full rounded-lg border border-sand bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-200"
+                  >
+                    <option value="">Select…</option>
+                    {cities.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-ink/80">Area</label>
+                  <select
+                    required
+                    disabled={!cityId}
+                    value={form.serviceAreaId}
+                    onChange={(e) => update("serviceAreaId", e.target.value)}
+                    className="w-full rounded-lg border border-sand bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-200 disabled:bg-sand/20"
+                  >
+                    <option value="">Select…</option>
+                    {areasForCity.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-ink/80">City</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Enter your city"
+                  value={form.city}
+                  onChange={(e) => update("city", e.target.value)}
+                  className="w-full rounded-lg border border-sand bg-white px-3 py-2.5 text-sm text-ink outline-none transition focus:border-navy-500 focus:ring-2 focus:ring-navy-200"
+                />
+              </div>
+            )}
+            <label className="mt-3 flex items-center gap-2 text-xs text-ink/60">
+              <input
+                type="checkbox"
+                checked={notListed}
+                onChange={(e) => {
+                  setNotListed(e.target.checked);
+                  update("serviceAreaId", "");
+                }}
+                className="h-3.5 w-3.5 rounded border-sand text-navy-600 focus:ring-navy-300"
+              />
+              My city / area isn't listed
+            </label>
+          </div>
+
+          <div>
+            <p className="mb-2 text-sm font-semibold text-ink/80">2. Confirm your address</p>
+            <AddressMapPicker
+              value={
+                form.latitude !== null && form.longitude !== null
+                  ? { lat: form.latitude, lng: form.longitude }
+                  : null
+              }
+              onChange={(loc, parts) => {
+                update("latitude", loc.lat);
+                update("longitude", loc.lng);
+                if (parts?.label && !form.label) update("label", parts.label);
+                if (parts?.line1 && !form.line1) update("line1", parts.line1);
+                if (parts?.landmark && !form.line2) update("line2", parts.landmark);
+                if (parts?.state && !form.state) update("state", parts.state);
+                if (parts?.pincode && !form.pincode) update("pincode", parts.pincode);
+
+                // Auto-pick City / Area from the searched location if the
+                // customer hasn't already chosen one themselves.
+                if (!notListed && !cityId && parts?.city) {
+                  const matchedCity = cities.find(
+                    (c) => c.name.toLowerCase() === parts.city!.trim().toLowerCase()
+                  );
+                  if (matchedCity) {
+                    setCityId(matchedCity.id);
+                    if (parts.areaHint) {
+                      const matchedArea = serviceAreas.find(
+                        (a) =>
+                          a.cityId === matchedCity.id &&
+                          a.name.toLowerCase() === parts.areaHint!.trim().toLowerCase()
+                      );
+                      if (matchedArea) update("serviceAreaId", matchedArea.id);
+                    }
+                  }
+                }
+              }}
+            />
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -171,27 +302,15 @@ export default function AddressFormModal({ initial, onClose, onSaved }: Props) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink/80">City</label>
-              <input
-                type="text"
-                required
-                value={form.city}
-                onChange={(e) => update("city", e.target.value)}
-                className="w-full rounded-lg border border-sand bg-white px-3 py-2.5 text-sm text-ink outline-none transition focus:border-navy-500 focus:ring-2 focus:ring-navy-200"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink/80">State</label>
-              <input
-                type="text"
-                required
-                value={form.state}
-                onChange={(e) => update("state", e.target.value)}
-                className="w-full rounded-lg border border-sand bg-white px-3 py-2.5 text-sm text-ink outline-none transition focus:border-navy-500 focus:ring-2 focus:ring-navy-200"
-              />
-            </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-ink/80">State</label>
+            <input
+              type="text"
+              required
+              value={form.state}
+              onChange={(e) => update("state", e.target.value)}
+              className="w-full rounded-lg border border-sand bg-white px-3 py-2.5 text-sm text-ink outline-none transition focus:border-navy-500 focus:ring-2 focus:ring-navy-200"
+            />
           </div>
 
           <div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
 import { notificationIcon, formatRelativeTime } from "./notification-icons";
 
@@ -10,11 +11,13 @@ type Notification = {
   type: string;
   title: string;
   message: string;
+  link: string | null;
   isRead: boolean;
   createdAt: string;
 };
 
 export default function NotificationBell() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -43,6 +46,14 @@ export default function NotificationBell() {
     if (open) document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
+
+  function handleClick(n: Notification) {
+    if (!n.isRead) markRead(n.id);
+    if (n.link) {
+      setOpen(false);
+      router.push(n.link);
+    }
+  }
 
   async function markRead(id: string) {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
@@ -94,7 +105,7 @@ export default function NotificationBell() {
                   return (
                     <li key={n.id}>
                       <button
-                        onClick={() => !n.isRead && markRead(n.id)}
+                        onClick={() => handleClick(n)}
                         className={`flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-sand/20 ${
                           n.isRead ? "" : "bg-sky-50/60"
                         }`}

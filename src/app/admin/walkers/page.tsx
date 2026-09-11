@@ -10,10 +10,18 @@ export default async function AdminWalkersPage() {
   if (!session) redirect("/login");
   if (session.role !== "ADMIN") redirect(homeRouteForRole(session.role));
 
-  const walkers = await prisma.walker.findMany({
-    where: { deletedAt: null },
-    orderBy: { createdAt: "desc" },
-  });
+  const [walkers, serviceAreas] = await Promise.all([
+    prisma.walker.findMany({
+      where: { deletedAt: null },
+      include: { serviceAreas: { include: { city: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.serviceArea.findMany({
+      where: { deletedAt: null, isActive: true },
+      include: { city: true },
+      orderBy: [{ city: { name: "asc" } }, { name: "asc" }],
+    }),
+  ]);
 
   return (
     <main className="min-h-screen bg-paper">
@@ -24,7 +32,7 @@ export default async function AdminWalkersPage() {
           Dog walkers are added and managed here — there's no walker
           self-signup yet.
         </p>
-        <WalkerList initialWalkers={walkers} />
+        <WalkerList initialWalkers={walkers} serviceAreas={serviceAreas} />
       </div>
     </main>
   );

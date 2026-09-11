@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireCustomer } from "@/lib/guards";
 import { createBookingSchema } from "@/modules/bookings/booking.schema";
-import { getMonthlyPlanEndDate } from "@/lib/constants";
+import { getPlanEndDate } from "@/lib/constants";
 import { getRazorpayClient, isRazorpayConfigured } from "@/lib/razorpay";
+import { getServiceAreaIdsWithActiveWalker, NOT_SERVING_CITY_MESSAGE, NO_WALKER_AVAILABLE_MESSAGE } from "@/lib/service-area";
 
 const ACTIVE_BOOKING_STATUSES = ["CONFIRMED", "APPROVED", "WALKER_ASSIGNED", "ACTIVE"] as const;
 
@@ -76,6 +77,13 @@ export async function POST(req: NextRequest) {
   if (!address) {
     return NextResponse.json({ error: "Address not found" }, { status: 404 });
   }
+  if (!address.serviceAreaId) {
+    return NextResponse.json({ error: NOT_SERVING_CITY_MESSAGE }, { status: 422 });
+  }
+  const walkerAreaIds = await getServiceAreaIdsWithActiveWalker();
+  if (!walkerAreaIds.has(address.serviceAreaId)) {
+    return NextResponse.json({ error: NO_WALKER_AVAILABLE_MESSAGE }, { status: 422 });
+  }
 
   const dogs = await prisma.dog.findMany({
     where: { id: { in: dogIds }, userId: session.userId, deletedAt: null },
@@ -88,11 +96,13 @@ export async function POST(req: NextRequest) {
   start.setHours(0, 0, 0, 0);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  if (start < today) {
-    return NextResponse.json({ error: "Start date can't be in the past" }, { status: 400 });
+  const earliestStart = new Date(today);
+  earliestStart.setDate(earliestStart.getDate() + 1);
+  if (start < earliestStart) {
+    return NextResponse.json({ error: "Start date must be at least tomorrow" }, { status: 400 });
   }
 
-  const end = getMonthlyPlanEndDate(start);
+  const end = getPlanEndDate(start, plan.type);
 
   // Cancelled days from any of the customer's past bookings that haven't
   // been applied yet get tacked onto this booking's duration — same price,

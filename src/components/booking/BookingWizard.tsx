@@ -17,7 +17,18 @@ const SLOT_ICONS: Record<string, typeof Sun> = {
 };
 
 type Dog = { id: string; name: string; breed: string; photoUrl: string | null };
-type Address = { id: string; label: string; line1: string; city: string };
+type Address = {
+  id: string;
+  houseNumber: string;
+  label: string;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string;
+  pincode: string;
+  area: string | null;
+  walkerAvailable: boolean;
+};
 type Plan = { id: string; name: string; price: number; dogQuantity: number };
 
 type Props = {
@@ -30,7 +41,18 @@ type Props = {
 };
 
 type DogApiRecord = { id: string; name: string; breed: string; photoUrl: string | null };
-type AddressApiRecord = { id: string; label: string; line1: string; city: string };
+type AddressApiRecord = {
+  id: string;
+  houseNumber: string;
+  label: string;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string;
+  pincode: string;
+  area: string | null;
+  walkerAvailable: boolean;
+};
 
 type Step = "DOGS" | "PLAN" | "ADDRESS" | "SLOT" | "DATE" | "REVIEW";
 const STEPS: Step[] = ["DOGS", "PLAN", "ADDRESS", "SLOT", "DATE", "REVIEW"];
@@ -44,8 +66,11 @@ declare global {
   }
 }
 
-function todayISO() {
+// Bookings must start the day after booking, never the same day — there's
+// no time to assign a walker for a plan that begins immediately.
+function tomorrowISO() {
   const d = new Date();
+  d.setDate(d.getDate() + 1);
   return d.toISOString().slice(0, 10);
 }
 
@@ -65,7 +90,7 @@ export default function BookingWizard({
   const [planId, setPlanId] = useState<string>("");
   const [addressId, setAddressId] = useState(initialAddresses[0]?.id ?? "");
   const [slot, setSlot] = useState<string>("");
-  const [startDate, setStartDate] = useState(todayISO());
+  const [startDate, setStartDate] = useState(tomorrowISO());
   const [error, setError] = useState<string | null>(null);
   const [addingDog, setAddingDog] = useState(false);
   const [addingAddress, setAddingAddress] = useState(false);
@@ -99,9 +124,15 @@ export default function BookingWizard({
     const data = await res.json();
     const list: Address[] = (data.addresses ?? []).map((a: AddressApiRecord) => ({
       id: a.id,
+      houseNumber: a.houseNumber,
       label: a.label,
       line1: a.line1,
+      line2: a.line2,
       city: a.city,
+      state: a.state,
+      pincode: a.pincode,
+      area: a.area,
+      walkerAvailable: a.walkerAvailable,
     }));
     setAddresses(list);
     return list;
@@ -136,9 +167,16 @@ export default function BookingWizard({
       setError("Select a plan");
       return;
     }
-    if (step === "ADDRESS" && !addressId) {
-      setError("Select an address");
-      return;
+    if (step === "ADDRESS") {
+      const selected = addresses.find((a) => a.id === addressId);
+      if (!selected) {
+        setError("Select an address");
+        return;
+      }
+      if (!selected.walkerAvailable) {
+        setError("There's no walker available in this area yet — pick a different address, or check back soon.");
+        return;
+      }
     }
     if (step === "SLOT" && !slot) {
       setError("Select a walking slot");
@@ -397,15 +435,29 @@ export default function BookingWizard({
                 type="button"
                 onClick={() => setAddressId(address.id)}
                 className={`w-full rounded-xl border p-4 text-left transition ${
-                  addressId === address.id
-                    ? "border-navy-500 bg-navy-50 ring-1 ring-navy-300"
-                    : "border-sand bg-white hover:border-navy-200"
+                  !address.walkerAvailable
+                    ? "border-sand bg-sand/10"
+                    : addressId === address.id
+                      ? "border-navy-500 bg-navy-50 ring-1 ring-navy-300"
+                      : "border-sand bg-white hover:border-navy-200"
                 }`}
               >
-                <p className="text-sm font-semibold text-ink">{address.label}</p>
-                <p className="text-xs text-ink/50">
-                  {address.line1}, {address.city}
+                <p className={`text-sm font-semibold ${address.walkerAvailable ? "text-ink" : "text-ink/50"}`}>
+                  {address.label}
                 </p>
+                <p className="text-xs text-ink/60">
+                  {address.houseNumber}, {address.line1}
+                  {address.line2 ? `, ${address.line2}` : ""}
+                </p>
+                <p className="text-xs text-ink/50">
+                  {address.area ? `${address.area}, ` : ""}
+                  {address.city}, {address.state} – {address.pincode}
+                </p>
+                {!address.walkerAvailable && (
+                  <p className="mt-1.5 text-xs font-medium text-amber-600">
+                    No walker available in this area yet
+                  </p>
+                )}
               </button>
             ))}
             <button
@@ -455,7 +507,7 @@ export default function BookingWizard({
         <StepBlock title="Select start date">
           <input
             type="date"
-            min={todayISO()}
+            min={tomorrowISO()}
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             className="w-full max-w-xs rounded-lg border border-sand bg-white px-3 py-2.5 text-sm text-ink outline-none transition focus:border-navy-500 focus:ring-2 focus:ring-navy-200"
@@ -477,7 +529,11 @@ export default function BookingWizard({
             />
             <ReviewRow
               label="Address"
-              value={addresses.find((a) => a.id === addressId)?.label ?? ""}
+              value={(() => {
+                const a = addresses.find((addr) => addr.id === addressId);
+                if (!a) return "";
+                return `${a.label} — ${a.area ? `${a.area}, ` : ""}${a.city}`;
+              })()}
             />
             <ReviewRow label="Slot" value={WALK_SLOTS.find((s) => s.value === slot)?.label ?? ""} />
             <ReviewRow label="Walk duration" value={`${WALK_DURATION_MINUTES} minutes per walk`} />

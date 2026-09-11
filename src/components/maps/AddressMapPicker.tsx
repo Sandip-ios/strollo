@@ -17,6 +17,10 @@ type AddressParts = {
   city?: string;
   state?: string;
   pincode?: string;
+  // The finest-grained locality name Google gives us (sublocality /
+  // neighborhood) — used to auto-match one of our admin-defined Service
+  // Areas, independent of whatever ends up in the `landmark` text field.
+  areaHint?: string;
 };
 
 type Props = {
@@ -59,6 +63,7 @@ function parseAddressComponents(
     city: byType.locality,
     state: byType.administrative_area_level_1,
     pincode: byType.postal_code,
+    areaHint: sublocality1 ?? sublocality2 ?? byType.neighborhood,
   };
 }
 

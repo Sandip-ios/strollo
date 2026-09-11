@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { homeRouteForRole } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
+import { getServiceAreaIdsWithActiveWalker } from "@/lib/service-area";
 import AppHeader from "@/components/layout/AppHeader";
 import BookingWizard from "@/components/booking/BookingWizard";
 
@@ -10,20 +11,28 @@ export default async function BookPage() {
   if (!session) redirect("/login");
   if (session.role !== "CUSTOMER") redirect(homeRouteForRole(session.role));
 
-  const [user, dogs, addresses, plans] = await Promise.all([
+  const [user, dogs, addresses, plans, walkerAreaIds] = await Promise.all([
     prisma.user.findUnique({ where: { id: session.userId } }),
     prisma.dog.findMany({ where: { userId: session.userId, deletedAt: null }, orderBy: { createdAt: "desc" } }),
     prisma.address.findMany({
       where: { userId: session.userId, deletedAt: null },
+      include: { serviceArea: { select: { name: true } } },
       orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
     }),
     prisma.plan.findMany({
       where: { isActive: true, deletedAt: null },
       orderBy: { dogQuantity: "asc" },
     }),
+    getServiceAreaIdsWithActiveWalker(),
   ]);
 
   if (!user) redirect("/login");
+
+  const enrichedAddresses = addresses.map((a) => ({
+    ...a,
+    area: a.serviceArea?.name ?? null,
+    walkerAvailable: Boolean(a.serviceAreaId && walkerAreaIds.has(a.serviceAreaId)),
+  }));
 
   return (
     <main className="min-h-screen bg-paper pb-20 sm:pb-0">
@@ -44,7 +53,7 @@ export default async function BookPage() {
         ) : (
           <BookingWizard
             dogs={dogs}
-            addresses={addresses}
+            addresses={enrichedAddresses}
             plans={plans.map((p) => ({
               id: p.id,
               name: p.name,

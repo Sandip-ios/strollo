@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { notificationIcon, formatRelativeTime } from "./notification-icons";
 
 type Notification = {
@@ -8,11 +9,13 @@ type Notification = {
   type: string;
   title: string;
   message: string;
+  link: string | null;
   isRead: boolean;
   createdAt: string;
 };
 
 export default function NotificationRow({ notification }: { notification: Notification }) {
+  const router = useRouter();
   const [isRead, setIsRead] = useState(notification.isRead);
   const Icon = notificationIcon(notification.type);
 
@@ -22,10 +25,15 @@ export default function NotificationRow({ notification }: { notification: Notifi
     await fetch(`/api/notifications/${notification.id}`, { method: "PATCH" });
   }
 
+  function handleClick() {
+    markRead();
+    if (notification.link) router.push(notification.link);
+  }
+
   return (
     <li>
       <button
-        onClick={markRead}
+        onClick={handleClick}
         className={`flex w-full items-start gap-3 px-5 py-4 text-left transition hover:bg-sand/20 ${
           isRead ? "" : "bg-sky-50/60"
         }`}

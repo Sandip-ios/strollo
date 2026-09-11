@@ -50,6 +50,7 @@ export default async function NotificationsPage() {
                     type: n.type,
                     title: n.title,
                     message: n.message,
+                    link: n.link,
                     isRead: n.isRead,
                     createdAt: n.createdAt.toISOString(),
                   }}

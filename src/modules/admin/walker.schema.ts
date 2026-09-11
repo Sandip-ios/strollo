@@ -17,7 +17,7 @@ export const walkerSchema = z.object({
     })
     .transform((v) => (v.startsWith("+91") ? v : `+91${v}`)),
   photoUrl: z.string().url().optional().or(z.literal("")),
-  area: z.string().min(1, "Area / locality is required").max(100),
+  serviceAreaIds: z.array(z.string()).default([]),
   govIdType: z.string().max(40).optional().or(z.literal("")),
   govIdNumber: z.string().max(40).optional().or(z.literal("")),
   govIdPhotoUrl: z.string().url().optional().or(z.literal("")),

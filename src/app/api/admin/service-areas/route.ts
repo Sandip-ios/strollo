@@ -7,10 +7,20 @@ export async function GET() {
   const { error } = requireAdmin();
   if (error) return error;
 
-  const serviceAreas = await prisma.serviceArea.findMany({
+  const serviceAreasRaw = await prisma.serviceArea.findMany({
     where: { deletedAt: null },
+    include: { city: true, _count: { select: { walkers: { where: { isActive: true, deletedAt: null } } } } },
     orderBy: { createdAt: "desc" },
   });
+
+  const serviceAreas = serviceAreasRaw.map((a) => ({
+    id: a.id,
+    name: a.name,
+    cityId: a.cityId,
+    city: a.city,
+    isActive: a.isActive,
+    walkerCount: a._count.walkers,
+  }));
 
   return NextResponse.json({ serviceAreas });
 }
@@ -30,11 +40,15 @@ export async function POST(req: NextRequest) {
 
   const data = parsed.data;
 
+  const city = await prisma.city.findUnique({ where: { id: data.cityId } });
+  if (!city || city.deletedAt) {
+    return NextResponse.json({ error: "Select a valid city" }, { status: 400 });
+  }
+
   const serviceArea = await prisma.serviceArea.create({
     data: {
       name: data.name,
-      city: data.city,
-      pincodes: data.pincodes,
+      cityId: data.cityId,
       isActive: data.isActive,
     },
   });
@@ -45,7 +59,7 @@ export async function POST(req: NextRequest) {
       action: "SERVICE_AREA_CREATED",
       entityType: "ServiceArea",
       entityId: serviceArea.id,
-      metadata: { name: serviceArea.name, city: serviceArea.city, pincodes: serviceArea.pincodes },
+      metadata: { name: serviceArea.name, city: city.name },
     },
   });
 

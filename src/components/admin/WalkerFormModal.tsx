@@ -4,12 +4,14 @@ import { useState } from "react";
 import PhotoUpload from "@/components/PhotoUpload";
 import { GOV_ID_TYPES } from "@/modules/admin/walker.schema";
 
+export type ServiceAreaOption = { id: string; name: string; city: { id: string; name: string } };
+
 export type WalkerFormValues = {
   id?: string;
   name: string;
   mobileNumber: string;
   photoUrl: string;
-  area: string;
+  serviceAreaIds: string[];
   govIdType: string;
   govIdNumber: string;
   govIdPhotoUrl: string;
@@ -21,7 +23,7 @@ const EMPTY: WalkerFormValues = {
   name: "",
   mobileNumber: "",
   photoUrl: "",
-  area: "",
+  serviceAreaIds: [],
   govIdType: "",
   govIdNumber: "",
   govIdPhotoUrl: "",
@@ -31,11 +33,12 @@ const EMPTY: WalkerFormValues = {
 
 type Props = {
   initial?: WalkerFormValues;
+  serviceAreas: ServiceAreaOption[];
   onClose: () => void;
   onSaved: () => void;
 };
 
-export default function WalkerFormModal({ initial, onClose, onSaved }: Props) {
+export default function WalkerFormModal({ initial, serviceAreas, onClose, onSaved }: Props) {
   const [form, setForm] = useState<WalkerFormValues>(initial ?? EMPTY);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -45,6 +48,24 @@ export default function WalkerFormModal({ initial, onClose, onSaved }: Props) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  function toggleServiceArea(id: string) {
+    setForm((f) => ({
+      ...f,
+      serviceAreaIds: f.serviceAreaIds.includes(id)
+        ? f.serviceAreaIds.filter((a) => a !== id)
+        : [...f.serviceAreaIds, id],
+    }));
+  }
+
+  const areasByCity = serviceAreas.reduce<Record<string, { cityName: string; areas: ServiceAreaOption[] }>>(
+    (acc, area) => {
+      acc[area.city.id] ??= { cityName: area.city.name, areas: [] };
+      acc[area.city.id].areas.push(area);
+      return acc;
+    },
+    {}
+  );
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -52,10 +73,6 @@ export default function WalkerFormModal({ initial, onClose, onSaved }: Props) {
     const mobileDigits = form.mobileNumber.replace(/\D/g, "").slice(-10);
     if (mobileDigits.length !== 10) {
       setError("Enter a valid 10-digit mobile number");
-      return;
-    }
-    if (!form.area.trim()) {
-      setError("Enter the area / locality this walker covers");
       return;
     }
 
@@ -68,7 +85,7 @@ export default function WalkerFormModal({ initial, onClose, onSaved }: Props) {
           name: form.name,
           mobileNumber: mobileDigits,
           photoUrl: form.photoUrl,
-          area: form.area,
+          serviceAreaIds: form.serviceAreaIds,
           govIdType: form.govIdType,
           govIdNumber: form.govIdNumber,
           govIdPhotoUrl: form.govIdPhotoUrl,
@@ -132,16 +149,42 @@ export default function WalkerFormModal({ initial, onClose, onSaved }: Props) {
 
           <div>
             <label className="mb-1.5 block text-sm font-medium text-ink/80">
-              Area / locality covered
+              Service areas covered
             </label>
-            <input
-              type="text"
-              required
-              placeholder="Satellite, Ahmedabad"
-              value={form.area}
-              onChange={(e) => update("area", e.target.value)}
-              className="w-full rounded-lg border border-sand bg-white px-3 py-2.5 text-sm text-ink outline-none transition focus:border-navy-500 focus:ring-2 focus:ring-navy-200"
-            />
+            {Object.keys(areasByCity).length === 0 ? (
+              <p className="rounded-lg border border-dashed border-sand bg-sand/10 p-3 text-xs text-ink/50">
+                No active service areas yet — add a city and its areas under Master first.
+              </p>
+            ) : (
+              <div className="max-h-48 space-y-3 overflow-y-auto rounded-lg border border-sand p-3">
+                {Object.values(areasByCity).map((group) => (
+                  <div key={group.cityName}>
+                    <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink/50">
+                      {group.cityName}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {group.areas.map((area) => {
+                        const active = form.serviceAreaIds.includes(area.id);
+                        return (
+                          <button
+                            type="button"
+                            key={area.id}
+                            onClick={() => toggleServiceArea(area.id)}
+                            className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                              active
+                                ? "border-navy-500 bg-navy-50 text-navy-700"
+                                : "border-sand bg-white text-ink/60 hover:border-navy-200"
+                            }`}
+                          >
+                            {area.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="rounded-lg border border-sand bg-sand/10 p-4">

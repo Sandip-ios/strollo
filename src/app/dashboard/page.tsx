@@ -17,6 +17,7 @@ import {
   Heart,
   ArrowRight,
   Star,
+  Plus,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { homeRouteForRole, getWalkSlotStart, WALK_SLOTS } from "@/lib/constants";
@@ -89,6 +90,14 @@ export default async function DashboardPage() {
     currentBooking?.walks.filter((w) => w.status === "SCHEDULED" && w.scheduledDate >= today) ?? [];
   const nextWalk = ongoingWalk ?? upcomingScheduled[0] ?? null;
 
+  // Distinct from `nextWalk` above — that can be a future day's walk (used
+  // for the "Next Walk" hero banner, which shows its own date). This is
+  // specifically whatever walk instance is dated today, whatever its status
+  // (scheduled/ongoing/completed/cancelled), so the "Today's Walk Progress"
+  // card never shows a different day's timeline under a "Today" label.
+  const todaysWalk =
+    currentBooking?.walks.find((w) => w.scheduledDate.toDateString() === today.toDateString()) ?? null;
+
   const cancelledUpcoming =
     currentBooking?.walks.filter((w) => w.status === "CANCELLED" && w.scheduledDate >= today).length ?? 0;
 
@@ -113,12 +122,12 @@ export default async function DashboardPage() {
   const totalHours = completedWalks.reduce((s, w) => s + (w.durationSec ?? 0), 0) / 3600;
   const happyDays = new Set(completedWalks.map((w) => w.scheduledDate.toDateString())).size;
 
-  const timelineSteps = nextWalk
+  const todaysTimelineSteps = todaysWalk
     ? buildTimelineSteps({
         walkerAssigned: Boolean(currentBooking?.walkerId),
-        status: nextWalk.status,
-        startTime: nextWalk.startTime,
-        endTime: nextWalk.endTime,
+        status: todaysWalk.status,
+        startTime: todaysWalk.startTime,
+        endTime: todaysWalk.endTime,
       })
     : [];
 
@@ -322,10 +331,25 @@ export default async function DashboardPage() {
               fill
               priority
               className="object-cover"
-              style={{ objectPosition: "70% 50%" }}
+              style={{ objectPosition: "70% 8%" }}
             />
           </div>
         </div>
+
+        {currentBooking && (
+          <div className="mt-6 flex items-center justify-between gap-3 rounded-xl border border-dashed border-sand bg-white/60 px-5 py-4">
+            <p className="text-sm text-ink/60">
+              Another dog to walk, or want to plan ahead? You can book another walk anytime.
+            </p>
+            <Link
+              href="/book"
+              className="flex shrink-0 items-center gap-1.5 rounded-lg bg-navy-600 px-4 py-2 text-sm font-semibold text-paper transition hover:bg-navy-700"
+            >
+              <Plus className="h-4 w-4" strokeWidth={2.5} />
+              Book another walk
+            </Link>
+          </div>
+        )}
 
         {rateableBooking && rateableBooking.walker && (
           <div className="mt-6">
@@ -457,10 +481,10 @@ export default async function DashboardPage() {
               </span>
               Today's Walk Progress
             </p>
-            {nextWalk ? (
+            {todaysWalk && todaysWalk.status !== "CANCELLED" ? (
               <>
                 <div className="mt-4">
-                  <WalkTimeline steps={timelineSteps} />
+                  <WalkTimeline steps={todaysTimelineSteps} />
                 </div>
                 {currentBooking && (
                   <Link
@@ -471,6 +495,8 @@ export default async function DashboardPage() {
                   </Link>
                 )}
               </>
+            ) : todaysWalk?.status === "CANCELLED" ? (
+              <p className="mt-4 text-sm text-ink/50">Today's walk was skipped.</p>
             ) : (
               <p className="mt-4 text-sm text-ink/50">No walk scheduled today.</p>
             )}

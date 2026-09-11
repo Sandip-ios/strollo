@@ -9,9 +9,8 @@ const ADMIN_NAV_LINKS = [
   { href: "/admin/customers", label: "Customers" },
   { href: "/admin/walkers", label: "Walkers" },
   { href: "/admin/ratings", label: "Ratings" },
-  { href: "/admin/service-areas", label: "Service Areas" },
-  { href: "/admin/plans", label: "Plans & Pricing" },
   { href: "/admin/reports", label: "Reports" },
+  { href: "/admin/master", label: "Master" },
 ];
 
 export default function AdminHeader({ active }: { active?: string }) {
@@ -40,12 +39,15 @@ export default function AdminHeader({ active }: { active?: string }) {
           <LogoutButton />
         </div>
       </div>
-      <nav className="flex items-center gap-5 border-t border-sand px-6 py-2 sm:hidden">
+      <nav
+        className="flex items-center gap-5 overflow-x-auto border-t border-sand px-6 py-2 sm:hidden"
+        style={{ scrollbarWidth: "none" }}
+      >
         {ADMIN_NAV_LINKS.map((link) => (
           <Link
             key={link.href}
             href={link.href}
-            className={`text-xs font-medium transition ${
+            className={`shrink-0 text-xs font-medium transition ${
               active === link.href ? "text-navy-600" : "text-ink/50"
             }`}
           >

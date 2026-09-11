@@ -9,6 +9,7 @@ export async function GET() {
 
   const walkers = await prisma.walker.findMany({
     where: { deletedAt: null },
+    include: { serviceAreas: { include: { city: true } } },
     orderBy: { createdAt: "desc" },
   });
 
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
       name: data.name,
       mobileNumber: data.mobileNumber,
       photoUrl: data.photoUrl || null,
-      area: data.area,
+      serviceAreas: { connect: data.serviceAreaIds.map((id) => ({ id })) },
       govIdType: data.govIdType || null,
       govIdNumber: data.govIdNumber || null,
       govIdPhotoUrl: data.govIdPhotoUrl || null,

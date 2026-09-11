@@ -23,12 +23,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const data = parsed.data;
 
+  const city = await prisma.city.findUnique({ where: { id: data.cityId } });
+  if (!city || city.deletedAt) {
+    return NextResponse.json({ error: "Select a valid city" }, { status: 400 });
+  }
+
   const serviceArea = await prisma.serviceArea.update({
     where: { id: params.id },
     data: {
       name: data.name,
-      city: data.city,
-      pincodes: data.pincodes,
+      cityId: data.cityId,
       isActive: data.isActive,
     },
   });

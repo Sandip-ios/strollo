@@ -71,6 +71,20 @@ export function getMonthlyPlanEndDate(startDate: Date): Date {
   return end;
 }
 
+// Weekly plan billing cycle: exactly 7 days from the start date (inclusive).
+// e.g. start date 4th → end date 10th.
+export function getWeeklyPlanEndDate(startDate: Date): Date {
+  const end = new Date(startDate);
+  end.setDate(end.getDate() + 6);
+  return end;
+}
+
+// CUSTOM plans share the MONTHLY billing cycle (they only vary dog count
+// and price, not duration) — only WEEKLY has a different cycle length.
+export function getPlanEndDate(startDate: Date, planType: "TRIAL" | "WEEKLY" | "MONTHLY" | "CUSTOM"): Date {
+  return planType === "WEEKLY" ? getWeeklyPlanEndDate(startDate) : getMonthlyPlanEndDate(startDate);
+}
+
 // Generates one walk-instance date per day in [startDate, endDate],
 // skipping Sundays.
 export function generateWalkDates(startDate: Date, endDate: Date): Date[] {

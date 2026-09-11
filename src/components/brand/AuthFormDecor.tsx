@@ -11,25 +11,25 @@ function PawPrint({ className, rotate = 0 }: { className?: string; rotate?: numb
   );
 }
 
-// Purely decorative accents for the auth form column — an illustrated dog
-// tucked in the corner below the primary button, with a footstep trail
-// leading into it from the left, matching the reference composition where
-// both live together in the same corner. Hidden below md since the form
-// column is full-width there and has no room to spare.
+// Purely decorative accents for the auth form column — a small illustrated
+// dog tucked into the corner, sized to sit in the margin beside the
+// centered form column rather than behind it (the form's max-w-sm content,
+// including the trust card at the bottom, would otherwise overlap a
+// larger version of this). Hidden below md since the form column is
+// full-width there and has no room to spare.
 export default function AuthFormDecor() {
   return (
     <>
-      <div className="pointer-events-none absolute bottom-16 right-56 hidden text-sky-200 md:block lg:right-72">
-        <PawPrint className="h-5 w-5" rotate={-15} />
-        <PawPrint className="ml-7 mt-2 h-6 w-6" rotate={10} />
-        <PawPrint className="ml-3 mt-2 h-7 w-7" rotate={-8} />
+      <div className="pointer-events-none absolute bottom-32 right-4 hidden text-sky-200 md:block lg:right-6">
+        <PawPrint className="h-4 w-4" rotate={-15} />
+        <PawPrint className="ml-5 mt-2 h-5 w-5" rotate={10} />
       </div>
       <Image
         src="/marketing/dog-illustration.png"
         alt=""
         width={767}
         height={304}
-        className="pointer-events-none absolute bottom-0 right-0 hidden w-72 opacity-95 md:block lg:w-96"
+        className="pointer-events-none absolute bottom-4 right-4 hidden w-44 opacity-95 md:block lg:w-64"
       />
     </>
   );

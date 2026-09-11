@@ -13,7 +13,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
 
   const booking = await prisma.booking.findFirst({
     where: { id: params.id, deletedAt: null },
-    include: { customer: true, payment: true, walks: true },
+    include: { customer: true, payment: true, walks: true, walker: true },
   });
   if (!booking) {
     return NextResponse.json({ error: "Booking not found" }, { status: 404 });
@@ -101,6 +101,19 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
             : `Your booking has been ${wasPreApproval ? "rejected" : "cancelled"}.`,
       },
     });
+
+    // A walker with walks already lined up for this booking needs to know
+    // not to show up — customer-facing wording, since this is their inbox.
+    if (booking.walker?.userId && remainingScheduledWalks > 0) {
+      await tx.notification.create({
+        data: {
+          userId: booking.walker.userId,
+          type: wasPreApproval ? "BOOKING_REJECTED" : "BOOKING_CANCELLED",
+          title: "Walk cancelled",
+          message: `The booking for ${booking.customer.name ?? booking.customer.mobileNumber}'s dog has been cancelled — no walk needed there anymore.`,
+        },
+      });
+    }
 
     await tx.auditLog.create({
       data: {

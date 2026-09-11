@@ -1,23 +1,23 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { DOG_BREEDS } from "@/lib/dog-constants";
 
 type Props = {
   value: string;
   onChange: (value: string) => void;
+  breeds: string[];
 };
 
-export default function BreedCombobox({ value, onChange }: Props) {
+export default function BreedCombobox({ value, onChange, breeds }: Props) {
   const [query, setQuery] = useState(value);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(() => {
-    if (!query.trim()) return DOG_BREEDS;
+    if (!query.trim()) return breeds;
     const q = query.toLowerCase();
-    return DOG_BREEDS.filter((b) => b.toLowerCase().includes(q));
-  }, [query]);
+    return breeds.filter((b) => b.toLowerCase().includes(q));
+  }, [query, breeds]);
 
   function selectBreed(breed: string) {
     onChange(breed);

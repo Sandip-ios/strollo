@@ -52,8 +52,8 @@ export default async function AdminRatingsPage() {
           average first so a walker trending badly stands out.
         </p>
 
-        <div className="overflow-hidden rounded-xl border border-sand bg-white">
-          <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto rounded-xl border border-sand bg-white">
+          <table className="w-full min-w-[420px] text-left text-sm">
             <thead className="border-b border-sand bg-sand/20 text-xs uppercase tracking-wide text-ink/50">
               <tr>
                 <th className="px-4 py-2.5 font-medium">Walker</th>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireWalker } from "@/lib/guards";
 import { computeRouteDistanceMeters } from "@/lib/geo";
-import { notifyByEmail } from "@/lib/email";
+import { notifyByEmail, sendEmail, emailShell, ADMIN_NOTIFICATION_EMAILS } from "@/lib/email";
 import { z } from "zod";
 
 const routePointSchema = z.object({
@@ -12,6 +12,10 @@ const routePointSchema = z.object({
 });
 
 const completeSchema = z.object({
+  mood: z.enum(["NOT_GOOD", "OKAY", "GOOD", "EXCELLENT"]).optional(),
+  // Legacy fields — the current UI logs these per-event during the walk
+  // instead, but the endpoint still accepts them so nothing breaks if
+  // called from an older client.
   walkerNotes: z.string().max(500).optional().or(z.literal("")),
   pooUpdate: z.boolean().optional(),
   peeUpdate: z.boolean().optional(),
@@ -70,9 +74,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         status: "COMPLETED",
         endTime,
         durationSec,
+        mood: data.mood ?? undefined,
         walkerNotes: data.walkerNotes || null,
-        pooUpdate: data.pooUpdate ?? null,
-        peeUpdate: data.peeUpdate ?? null,
+        pooUpdate: data.pooUpdate ?? undefined,
+        peeUpdate: data.peeUpdate ?? undefined,
         routePath: routePath ?? undefined,
         distanceMeters: distanceMeters ?? undefined,
       },
@@ -105,10 +110,27 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return updatedWalk;
   });
 
+  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+  const durationLabel = `${Math.round(durationSec / 60)} min`;
+  const distanceLabel = distanceMeters !== undefined ? `${(distanceMeters / 1000).toFixed(2)} km` : null;
+  const detailsLine =
+    `Duration: ${durationLabel}` + (distanceLabel ? ` · Distance: ${distanceLabel}` : "");
+
   await notifyByEmail({
     email: walk.booking.customer.email,
     title: "Walk completed",
-    message: `Today's walk is done — check the update from ${walker.name}.`,
+    message: `Today's walk is done — ${walker.name} has finished up. ${detailsLine}.`,
+    cta: { label: "View walk details", url: `${appUrl}/bookings/${walk.bookingId}` },
+  });
+
+  await sendEmail({
+    to: ADMIN_NOTIFICATION_EMAILS.join(", "),
+    subject: "Walk completed",
+    html: emailShell(
+      "Walk completed",
+      `${walker.name} completed a walk for ${walk.booking.customer.name ?? walk.booking.customer.mobileNumber}'s dog. ${detailsLine}.`,
+      { label: "View booking", url: `${appUrl}/admin/bookings/${walk.bookingId}` }
+    ),
   });
 
   return NextResponse.json({ walk: updated });

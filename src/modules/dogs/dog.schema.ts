@@ -13,8 +13,7 @@ export const dogSchema = z
       .min(0.5, "Enter a valid weight")
       .max(120, "That weight doesn't look right"),
     gender: z.enum(["MALE", "FEMALE"]),
-    isVaccinated: z.boolean().default(false),
-    isRabiesVaccinated: z.boolean().default(false),
+    vaccinations: z.array(z.string()).default([]),
     temperament: z.array(z.string()).default([]),
     isRegisteredWithAMC: z.boolean().default(false),
     amcRegistrationNumber: z.string().max(50).optional().or(z.literal("")),

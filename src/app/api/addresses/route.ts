@@ -2,18 +2,33 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireCustomer } from "@/lib/guards";
 import { addressSchema } from "@/modules/addresses/address.schema";
-import { resolveServiceArea, NOT_SERVICEABLE_MESSAGE } from "@/lib/service-area";
+import {
+  resolveServiceArea,
+  NOT_SERVICEABLE_MESSAGE,
+  notifyAdminsOfUnservedAreaRequest,
+  getServiceAreaIdsWithActiveWalker,
+} from "@/lib/service-area";
 
 export async function GET() {
   const { session, error } = requireCustomer();
   if (error) return error;
 
-  const addresses = await prisma.address.findMany({
-    where: { userId: session.userId, deletedAt: null },
-    orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
-  });
+  const [addresses, walkerAreaIds] = await Promise.all([
+    prisma.address.findMany({
+      where: { userId: session.userId, deletedAt: null },
+      include: { serviceArea: { select: { name: true } } },
+      orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+    }),
+    getServiceAreaIdsWithActiveWalker(),
+  ]);
 
-  return NextResponse.json({ addresses });
+  const enriched = addresses.map((a) => ({
+    ...a,
+    area: a.serviceArea?.name ?? null,
+    walkerAvailable: Boolean(a.serviceAreaId && walkerAreaIds.has(a.serviceAreaId)),
+  }));
+
+  return NextResponse.json({ addresses: enriched });
 }
 
 export async function POST(req: NextRequest) {
@@ -31,9 +46,10 @@ export async function POST(req: NextRequest) {
 
   const data = parsed.data;
 
-  const coverage = await resolveServiceArea(data.pincode);
+  const coverage = await resolveServiceArea(data.serviceAreaId);
   if (!coverage.serviceable) {
-    return NextResponse.json({ error: NOT_SERVICEABLE_MESSAGE(data.pincode) }, { status: 422 });
+    await notifyAdminsOfUnservedAreaRequest({ userId: session.userId, cityName: data.city });
+    return NextResponse.json({ error: NOT_SERVICEABLE_MESSAGE }, { status: 422 });
   }
 
   // First address for a user is always the default, regardless of what

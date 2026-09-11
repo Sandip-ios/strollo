@@ -10,7 +10,7 @@ export default function SiteHeader({ variant = "solid" }: Props) {
     : "text-sm font-semibold text-ink/70 hover:text-ink";
 
   return (
-    <header className={transparent ? "absolute inset-x-0 top-0 z-20" : "border-b border-sand bg-white"}>
+    <header className={transparent ? "relative z-20 bg-navy-900" : "border-b border-sand bg-white"}>
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
         <Link href="/">
           <Logo
@@ -28,7 +28,14 @@ export default function SiteHeader({ variant = "solid" }: Props) {
           </Link>
         </nav>
         <div className="flex items-center gap-3">
-          <Link href="/login" className={linkClass}>
+          <Link
+            href="/login"
+            className={
+              transparent
+                ? "rounded-full border border-white/30 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-white/10"
+                : "rounded-full border border-navy-600/30 px-5 py-2.5 text-sm font-bold text-navy-700 transition hover:bg-navy-50"
+            }
+          >
             Login
           </Link>
           <Link

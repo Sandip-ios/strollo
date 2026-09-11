@@ -29,7 +29,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       name: data.name,
       mobileNumber: data.mobileNumber,
       photoUrl: data.photoUrl || null,
-      area: data.area,
+      serviceAreas: { set: data.serviceAreaIds.map((id) => ({ id })) },
       govIdType: data.govIdType || null,
       govIdNumber: data.govIdNumber || null,
       govIdPhotoUrl: data.govIdPhotoUrl || null,

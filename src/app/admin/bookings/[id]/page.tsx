@@ -3,7 +3,6 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AdminHeader from "@/components/layout/AdminHeader";
 import AssignWalkerPanel from "@/components/admin/AssignWalkerPanel";
-import ApproveBookingButton from "@/components/admin/ApproveBookingButton";
 import CancelBookingButton from "@/components/admin/CancelBookingButton";
 import WalkDetails from "@/components/booking/WalkDetails";
 import {
@@ -15,7 +14,7 @@ import {
 } from "@/lib/constants";
 
 const STATUS_LABELS: Record<string, string> = {
-  CONFIRMED: "Confirmed — needs approval",
+  CONFIRMED: "Confirmed — needs a walker",
   APPROVED: "Approved — needs walker",
   WALKER_ASSIGNED: "Walker assigned",
   ACTIVE: "Active",
@@ -44,11 +43,15 @@ export default async function AdminBookingDetailPage({ params }: { params: { id:
         address: true,
         walker: true,
         bookingDogs: { include: { dog: true } },
-        walks: { orderBy: { scheduledDate: "asc" }, include: { photos: true } },
+        walks: { orderBy: { scheduledDate: "asc" }, include: { photos: true, events: { orderBy: { occurredAt: "asc" } } } },
         payment: true,
       },
     }),
-    prisma.walker.findMany({ where: { deletedAt: null, isActive: true }, orderBy: { name: "asc" } }),
+    prisma.walker.findMany({
+      where: { deletedAt: null, isActive: true },
+      include: { serviceAreas: true },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   if (!booking) notFound();
@@ -92,12 +95,16 @@ export default async function AdminBookingDetailPage({ params }: { params: { id:
         </div>
 
         <div className="mt-6 space-y-4">
-          {booking.status === "CONFIRMED" && <ApproveBookingButton bookingId={booking.id} />}
-          {["APPROVED", "WALKER_ASSIGNED", "ACTIVE"].includes(booking.status) && (
+          {["CONFIRMED", "APPROVED", "WALKER_ASSIGNED", "ACTIVE"].includes(booking.status) && (
             <AssignWalkerPanel
               bookingId={booking.id}
               currentWalkerId={booking.walkerId}
-              walkers={walkers.map((w) => ({ id: w.id, name: w.name, mobileNumber: w.mobileNumber, area: w.area }))}
+              walkers={walkers.map((w) => ({
+                id: w.id,
+                name: w.name,
+                mobileNumber: w.mobileNumber,
+                area: w.serviceAreas.length > 0 ? w.serviceAreas.map((a) => a.name).join(", ") : "no areas assigned",
+              }))}
             />
           )}
           {CANCELLABLE_STATUSES.includes(booking.status) && (
@@ -132,6 +139,17 @@ export default async function AdminBookingDetailPage({ params }: { params: { id:
                     walkerNotes: walk.walkerNotes,
                     distanceMeters: walk.distanceMeters,
                     durationSec: walk.durationSec,
+                    routePath: walk.routePath as { lat: number; lng: number; ts: number }[] | null,
+                    events: walk.events.map((e) => ({
+                      id: e.id,
+                      type: e.type,
+                      note: e.note,
+                      photoUrl: e.photoUrl,
+                      occurredAt: e.occurredAt.toISOString(),
+                    })),
+                    startTime: walk.startTime,
+                    endTime: walk.endTime,
+                    mood: walk.mood,
                   }}
                 />
               </li>

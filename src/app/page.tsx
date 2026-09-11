@@ -1,10 +1,75 @@
 import Link from "next/link";
 import Image from "next/image";
-import { CalendarCheck, MapPin, ShieldCheck, Camera, PawPrint } from "lucide-react";
+import { CalendarCheck, MapPin, ShieldCheck, Camera, PawPrint, Heart, User } from "lucide-react";
 import SiteHeader from "@/components/marketing/SiteHeader";
 import SiteFooter from "@/components/marketing/SiteFooter";
+import DashedHeartDoodle from "@/components/brand/DashedHeartDoodle";
 import { prisma } from "@/lib/prisma";
 import { WALK_DURATION_MINUTES } from "@/lib/constants";
+
+const HERO_BADGES = [
+  { icon: ShieldCheck, label: "Verified & Trained Walkers" },
+  { icon: MapPin, label: "Live Walk Tracking" },
+  { icon: Camera, label: "Photo Updates" },
+  { icon: Heart, label: "Poo & Health Updates" },
+];
+
+function HeroHeading() {
+  return (
+    <>
+      <h1 className="font-display text-4xl font-extrabold leading-[1.05] sm:text-5xl lg:text-6xl">
+        <span className="text-navy-800">Happy Steps,</span>
+        <br />
+        <span className="text-blue-600">Happy Dogs</span>
+      </h1>
+      <p className="mt-4 max-w-md text-base leading-relaxed text-ink/60">
+        Trusted dog walking, real-time tracking, and lots of love — because
+        your dog deserves the best.
+      </p>
+    </>
+  );
+}
+
+function HeroCTAButtons() {
+  return (
+    <div className="mt-6 flex flex-wrap gap-3">
+      <Link
+        href="/signup"
+        className="flex items-center gap-3 rounded-full bg-blue-600 py-3 pl-3 pr-6 text-base font-bold text-white shadow-lg shadow-blue-900/25 transition hover:bg-blue-700"
+      >
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white">
+          <PawPrint className="h-4 w-4 text-blue-600" strokeWidth={2.5} />
+        </span>
+        Book Your First Walk
+      </Link>
+      <Link
+        href="/login"
+        className="flex items-center gap-2.5 rounded-full border-2 border-navy-600 bg-white py-3 pl-5 pr-6 text-base font-bold text-navy-700 transition hover:bg-navy-50"
+      >
+        <User className="h-5 w-5" strokeWidth={2.25} />
+        Login
+      </Link>
+    </div>
+  );
+}
+
+// One solid white card grouping all four badges together (not four
+// separate chips) — reads cleanly whether it's sitting on the busy hero
+// photo (xl+ overlay layout) or the plain bg-paper stacked layout below.
+function HeroBadgeRow() {
+  return (
+    <div className="mt-6 flex divide-x divide-sand rounded-2xl bg-white px-2 py-4 shadow-lg shadow-navy-900/10 sm:px-4">
+      {HERO_BADGES.map((b) => (
+        <div key={b.label} className="flex flex-1 flex-col items-center px-1.5 text-center sm:px-2">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-50">
+            <b.icon className="h-5 w-5 text-blue-600" strokeWidth={1.75} />
+          </div>
+          <p className="mt-1.5 text-[11px] font-semibold leading-tight text-navy-700">{b.label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const FEATURES = [
   {
@@ -74,45 +139,52 @@ export default async function Home() {
     <main className="bg-paper">
       <SiteHeader variant="transparent" />
 
-      {/* Hero — full-bleed photo, huge type */}
-      <section className="relative flex min-h-[640px] items-center overflow-hidden bg-navy-800 sm:min-h-[720px]">
+      {/* Hero — stacked layout below xl (photo band on top, content in a
+          plain paper section below — the safe, proven pattern already
+          used by AuthMobileCarousel), and a full-bleed photo with text
+          overlaid on its bright-sky left half at xl+. This photo is
+          already a short, wide banner crop (2240x702, ~3.2:1) with both
+          the walker and dog fully in frame, so the xl+ section matches
+          that aspect ratio directly — short height, zero crop. A
+          xl:min-h-[460px] floor guards the content (headline, buttons,
+          badge card) from being clipped at the narrow end of xl widths;
+          when that floor wins over the aspect-ratio height, object-cover
+          just crops a bit of the side background instead, never the
+          walker/dog vertically. */}
+      <section className="relative overflow-hidden bg-paper xl:hidden">
+        <div className="relative h-64 w-full sm:h-80">
+          <Image
+            src="/marketing/hero-banner.png"
+            alt="A trained Strollo walker in uniform walking a golden retriever wearing a Strollo scarf"
+            fill
+            priority
+            className="object-cover object-[60%_center]"
+          />
+        </div>
+        <div className="px-6 py-8 sm:px-10">
+          <HeroHeading />
+          <HeroCTAButtons />
+          <HeroBadgeRow />
+        </div>
+      </section>
+
+      <section className="relative hidden overflow-hidden bg-paper xl:block xl:aspect-[2240/702] xl:min-h-[460px]">
         <Image
-          src="https://images.unsplash.com/photo-1530700131180-d43d9b8cc41f?w=1800&q=80&fit=crop"
-          alt="Happy golden retriever walking on a leash"
+          src="/marketing/hero-banner.png"
+          alt="A trained Strollo walker in uniform walking a golden retriever wearing a Strollo scarf"
           fill
           priority
-          className="object-cover object-[50%_35%]"
+          className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-navy-900 via-navy-900/70 to-navy-900/30" />
-        <div className="absolute inset-0 bg-gradient-to-r from-navy-900/80 via-navy-900/30 to-transparent" />
+        <DashedHeartDoodle className="absolute left-[49%] top-[8%] h-28 w-16 opacity-80" />
 
-        <div className="relative mx-auto w-full max-w-6xl px-6 pt-24 sm:pt-16">
-          <span className="inline-block rounded-full bg-sky-400/20 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-sky-200 ring-1 ring-inset ring-sky-300/30">
-            Now booking in Ahmedabad
-          </span>
-          <h1 className="mt-6 max-w-2xl font-display text-6xl font-extrabold leading-[0.95] text-white sm:text-7xl md:text-8xl">
-            Every walk,
-            <br />
-            on the record.
-          </h1>
-          <p className="mt-6 max-w-lg text-lg leading-relaxed text-white/80 sm:text-xl">
-            Trained, ID-verified dog walkers — booked in minutes, tracked live
-            from the first step to the last. {WALK_DURATION_MINUTES}-minute
-            walks, Monday to Saturday.
-          </p>
-          <div className="mt-10 flex flex-wrap gap-4">
-            <Link
-              href="/signup"
-              className="rounded-full bg-sky-400 px-8 py-4 text-base font-bold text-navy-900 shadow-lg shadow-sky-900/30 transition hover:bg-sky-300"
-            >
-              Book your first walk
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-full border-2 border-white/30 px-8 py-4 text-base font-bold text-white transition hover:bg-white/10"
-            >
-              Login
-            </Link>
+        <div className="relative flex h-full items-center">
+          <div className="mx-auto w-full max-w-6xl px-6 xl:px-12">
+            <div className="max-w-md">
+              <HeroHeading />
+              <HeroCTAButtons />
+              <HeroBadgeRow />
+            </div>
           </div>
         </div>
       </section>

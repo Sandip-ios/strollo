@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { homeRouteForRole } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import AdminHeader from "@/components/layout/AdminHeader";
+import NewBookingsAlert from "@/components/admin/NewBookingsAlert";
 
 export default async function AdminPage() {
   const session = getSession();
@@ -13,10 +14,32 @@ export default async function AdminPage() {
   const user = await prisma.user.findUnique({ where: { id: session.userId } });
   if (!user) redirect("/login");
 
-  const [needsApprovalCount, needsWalkerCount] = await Promise.all([
-    prisma.booking.count({ where: { deletedAt: null, status: "CONFIRMED" } }),
-    prisma.booking.count({ where: { deletedAt: null, status: "APPROVED" } }),
+  const [needsWalkerBookings, walkers] = await Promise.all([
+    prisma.booking.findMany({
+      where: { deletedAt: null, status: { in: ["CONFIRMED", "APPROVED"] }, walkerId: null },
+      include: { customer: true, plan: true, bookingDogs: { include: { dog: true } } },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.walker.findMany({
+      where: { deletedAt: null, isActive: true },
+      include: { serviceAreas: { include: { city: true } } },
+      orderBy: { name: "asc" },
+    }),
   ]);
+
+  const newBookingRows = needsWalkerBookings.map((b) => ({
+    id: b.id,
+    customerName: b.customer.name ?? b.customer.mobileNumber,
+    planName: b.plan.name,
+    dogNames: b.bookingDogs.map((bd) => bd.dog.name),
+  }));
+
+  const walkerOptions = walkers.map((w) => ({
+    id: w.id,
+    name: w.name,
+    mobileNumber: w.mobileNumber,
+    area: w.serviceAreas.length > 0 ? w.serviceAreas.map((a) => a.name).join(", ") : "no areas assigned",
+  }));
 
   return (
     <main className="min-h-screen bg-paper">
@@ -28,33 +51,7 @@ export default async function AdminPage() {
         </h1>
         <p className="mt-1 text-sm text-ink/60">Here&apos;s what needs your attention.</p>
 
-        {needsApprovalCount > 0 && (
-          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5">
-            <p className="text-sm font-medium text-amber-700">
-              {needsApprovalCount} booking{needsApprovalCount === 1 ? "" : "s"} awaiting approval
-            </p>
-            <Link
-              href="/admin/bookings"
-              className="mt-1 inline-block text-sm font-medium text-amber-700 underline underline-offset-2"
-            >
-              Review now
-            </Link>
-          </div>
-        )}
-
-        {needsWalkerCount > 0 && (
-          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-5">
-            <p className="text-sm font-medium text-red-700">
-              {needsWalkerCount} booking{needsWalkerCount === 1 ? "" : "s"} waiting for a walker
-            </p>
-            <Link
-              href="/admin/bookings"
-              className="mt-1 inline-block text-sm font-medium text-red-700 underline underline-offset-2"
-            >
-              Assign now
-            </Link>
-          </div>
-        )}
+        <NewBookingsAlert initialBookings={newBookingRows} walkers={walkerOptions} />
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <Link
@@ -86,9 +83,9 @@ export default async function AdminPage() {
             href="/admin/service-areas"
             className="rounded-xl border border-sand bg-white p-6 transition hover:border-navy-300 hover:shadow-sm"
           >
-            <h2 className="font-display text-lg font-semibold text-navy-700">Service Areas</h2>
+            <h2 className="font-display text-lg font-semibold text-navy-700">Cities & Service Areas</h2>
             <p className="mt-1 text-sm text-ink/60">
-              Control which pincodes can book a walk.
+              Control which cities and localities can book a walk.
             </p>
           </Link>
           <Link

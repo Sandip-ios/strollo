@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireCustomer } from "@/lib/guards";
 import { addressSchema } from "@/modules/addresses/address.schema";
-import { resolveServiceArea, NOT_SERVICEABLE_MESSAGE } from "@/lib/service-area";
+import { resolveServiceArea, NOT_SERVICEABLE_MESSAGE, notifyAdminsOfUnservedAreaRequest } from "@/lib/service-area";
 
 async function assertOwnership(addressId: string, userId: string) {
   const address = await prisma.address.findUnique({ where: { id: addressId } });
@@ -32,9 +32,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const data = parsed.data;
 
-  const coverage = await resolveServiceArea(data.pincode);
+  const coverage = await resolveServiceArea(data.serviceAreaId);
   if (!coverage.serviceable) {
-    return NextResponse.json({ error: NOT_SERVICEABLE_MESSAGE(data.pincode) }, { status: 422 });
+    await notifyAdminsOfUnservedAreaRequest({ userId: session.userId, cityName: data.city });
+    return NextResponse.json({ error: NOT_SERVICEABLE_MESSAGE }, { status: 422 });
   }
 
   if (data.isDefault) {

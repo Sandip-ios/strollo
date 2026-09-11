@@ -29,5 +29,6 @@ export async function GET(
     startTime: walk.startTime,
     pointCount: points.length,
     lastPoint,
+    routePath: points,
   });
 }

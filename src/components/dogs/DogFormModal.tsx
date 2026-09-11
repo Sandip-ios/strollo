@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PhotoUpload from "@/components/PhotoUpload";
 import BreedCombobox from "./BreedCombobox";
-import { DOG_SIZES, TEMPERAMENT_OPTIONS } from "@/lib/dog-constants";
+import { DOG_SIZES } from "@/lib/dog-constants";
 
 export type DogFormValues = {
   id?: string;
@@ -13,8 +13,7 @@ export type DogFormValues = {
   age: string;
   weightKg: string;
   gender: "MALE" | "FEMALE";
-  isVaccinated: boolean;
-  isRabiesVaccinated: boolean;
+  vaccinations: string[];
   temperament: string[];
   isRegisteredWithAMC: boolean;
   amcRegistrationNumber: string;
@@ -30,8 +29,7 @@ const EMPTY: DogFormValues = {
   age: "",
   weightKg: "",
   gender: "MALE",
-  isVaccinated: false,
-  isRabiesVaccinated: false,
+  vaccinations: [],
   temperament: [],
   isRegisteredWithAMC: false,
   amcRegistrationNumber: "",
@@ -50,7 +48,21 @@ export default function DogFormModal({ initial, onClose, onSaved }: Props) {
   const [form, setForm] = useState<DogFormValues>(initial ?? EMPTY);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [breeds, setBreeds] = useState<string[]>([]);
+  const [temperamentOptions, setTemperamentOptions] = useState<string[]>([]);
+  const [vaccinationOptions, setVaccinationOptions] = useState<string[]>([]);
   const isEdit = Boolean(initial?.id);
+
+  useEffect(() => {
+    fetch("/api/dog-options")
+      .then((res) => res.json())
+      .then((data) => {
+        setBreeds(data.breeds ?? []);
+        setTemperamentOptions(data.temperaments ?? []);
+        setVaccinationOptions(data.vaccinationTypes ?? []);
+      })
+      .catch(() => {});
+  }, []);
 
   function update<K extends keyof DogFormValues>(key: K, value: DogFormValues[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -62,6 +74,15 @@ export default function DogFormModal({ initial, onClose, onSaved }: Props) {
       temperament: f.temperament.includes(tag)
         ? f.temperament.filter((t) => t !== tag)
         : [...f.temperament, tag],
+    }));
+  }
+
+  function toggleVaccination(name: string) {
+    setForm((f) => ({
+      ...f,
+      vaccinations: f.vaccinations.includes(name)
+        ? f.vaccinations.filter((v) => v !== name)
+        : [...f.vaccinations, name],
     }));
   }
 
@@ -96,8 +117,7 @@ export default function DogFormModal({ initial, onClose, onSaved }: Props) {
           age,
           weightKg,
           gender: form.gender,
-          isVaccinated: form.isVaccinated,
-          isRabiesVaccinated: form.isRabiesVaccinated,
+          vaccinations: form.vaccinations,
           temperament: form.temperament,
           isRegisteredWithAMC: form.isRegisteredWithAMC,
           amcRegistrationNumber: form.amcRegistrationNumber,
@@ -146,7 +166,7 @@ export default function DogFormModal({ initial, onClose, onSaved }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-ink/80">Breed</label>
-              <BreedCombobox value={form.breed} onChange={(v) => update("breed", v)} />
+              <BreedCombobox value={form.breed} onChange={(v) => update("breed", v)} breeds={breeds} />
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-ink/80">Gender</label>
@@ -210,28 +230,30 @@ export default function DogFormModal({ initial, onClose, onSaved }: Props) {
             </div>
           </div>
 
-          {/* Vaccination toggles */}
+          {/* Vaccination multi-select */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-ink/80">Vaccination</label>
-            <div className="flex flex-wrap gap-2">
-              <ToggleChip
-                label="Vaccinated"
-                active={form.isVaccinated}
-                onClick={() => update("isVaccinated", !form.isVaccinated)}
-              />
-              <ToggleChip
-                label="Rabies vaccine"
-                active={form.isRabiesVaccinated}
-                onClick={() => update("isRabiesVaccinated", !form.isRabiesVaccinated)}
-              />
-            </div>
+            {vaccinationOptions.length === 0 ? (
+              <p className="text-xs text-ink/40">No vaccination types set up yet.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {vaccinationOptions.map((name) => (
+                  <ToggleChip
+                    key={name}
+                    label={name}
+                    active={form.vaccinations.includes(name)}
+                    onClick={() => toggleVaccination(name)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Temperament multi-select */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-ink/80">Temperament</label>
             <div className="flex flex-wrap gap-2">
-              {TEMPERAMENT_OPTIONS.map((tag) => (
+              {temperamentOptions.map((tag) => (
                 <ToggleChip
                   key={tag}
                   label={tag}

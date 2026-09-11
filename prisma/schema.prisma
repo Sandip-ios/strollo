@@ -125,8 +125,7 @@ model Dog {
   age                  Int
   weightKg             Float
   gender               DogGender
-  isVaccinated         Boolean   @default(false)
-  isRabiesVaccinated   Boolean   @default(false)
+  vaccinations         String[]  @default([]) // names from the admin-managed VaccinationType list, e.g. "Rabies"
   temperament          String[]  @default([]) // e.g. "Friendly", "Aggressive", "Shy", "Playful", "Calm"
   isRegisteredWithAMC  Boolean   @default(false)
   amcRegistrationNumber String?
@@ -177,26 +176,87 @@ model Plan {
 }
 
 // ----------------------------------------------------------------------------
-// MODULE: service areas (admin-managed serviceability — gates address
-// creation: a pincode not covered by any active ServiceArea is rejected as
-// "not serviceable", unless zero ServiceAreas exist at all, in which case
-// the check is skipped so a fresh instance isn't locked out before an
-// admin has configured anything.)
+// MODULE: cities & service areas (admin-managed serviceability — gates
+// address creation: a customer must pick a City and Area that exist and
+// are active, or the address is rejected as "not serviceable", unless
+// zero Cities exist at all, in which case the check is skipped so a
+// fresh instance isn't locked out before an admin has configured
+// anything. Expansion flow: admin adds a City, then Areas within it,
+// then assigns Walkers to the Areas they cover.)
 // ----------------------------------------------------------------------------
 
+// A city an admin has opened up for business — the first step of the
+// expansion flow (add city, then add areas within it, then assign
+// walkers to those areas).
+model City {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  serviceAreas ServiceArea[]
+
+  @@map("cities")
+}
+
+// A serviceable locality within a city — no pincodes: a customer picks
+// their City and Area directly from these when adding an address, so
+// there's nothing to fuzzy-match. A Walker can be assigned to more than
+// one of these to say which localities they cover.
 model ServiceArea {
   id        String    @id @default(cuid())
   name      String
-  city      String
-  pincodes  String[] // e.g. ["380009", "380014"] — the pincodes this area covers
+  cityId    String
+  city      City      @relation(fields: [cityId], references: [id])
   isActive  Boolean   @default(true)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   addresses Address[]
+  walkers   Walker[]
 
+  @@unique([name, cityId])
+  @@index([cityId])
   @@map("service_areas")
+}
+
+// Simple admin-managed lookup lists (dog breed, temperament tag, vaccination
+// type) — all share the same shape, so they're handled by one generic API
+// route factory (src/lib/master-list.ts) rather than three near-duplicates.
+model Breed {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("breeds")
+}
+
+model Temperament {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("temperaments")
+}
+
+model VaccinationType {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("vaccination_types")
 }
 
 // ----------------------------------------------------------------------------
@@ -211,7 +271,6 @@ model Walker {
   name              String
   mobileNumber      String    @unique
   photoUrl          String?
-  area              String    // Locality / area they operate in, e.g. "Satellite, Ahmedabad"
   govIdType         String?   // "Aadhaar Card", "PAN Card", "Driving License", "Voter ID"
   govIdNumber       String?
   govIdPhotoUrl     String?
@@ -221,9 +280,10 @@ model Walker {
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
 
-  bookings Booking[]
-  walks    WalkInstance[]
-  ratings  WalkerRating[]
+  bookings     Booking[]
+  walks        WalkInstance[]
+  ratings      WalkerRating[]
+  serviceAreas ServiceArea[]
 
   @@map("walkers")
 }
@@ -349,10 +409,14 @@ model WalkInstance {
   endTime        DateTime?
   distanceMeters Float?
   durationSec    Int?
-  routePath      Json? // array of {lat, lng, ts} points — recorded, not live yet
+  routePath      Json? // array of {lat, lng, ts} points, updated live during the walk
+  // Legacy end-of-walk summary fields — superseded by the WalkEvent
+  // timeline below for anything logged going forward, kept only so
+  // walks recorded before that existed still render correctly.
   pooUpdate      Boolean?
   peeUpdate      Boolean?
   walkerNotes    String?
+  mood           WalkMood? // walker's own read on how the walk went, set on completion
   cancelledAt    DateTime? // set when the customer cancels this day
   // True once this cancelled day's "credit" has been applied to extend a
   // later booking's duration — prevents the same cancelled day from being
@@ -362,10 +426,44 @@ model WalkInstance {
   updatedAt      DateTime   @updatedAt
 
   photos WalkPhoto[]
+  events WalkEvent[]
 
   @@index([bookingId])
   @@index([walkerId, scheduledDate])
   @@map("walk_instances")
+}
+
+enum WalkEventType {
+  PEE
+  POO
+  DRANK_WATER
+  HAPPY
+  RESTED
+  OTHER
+}
+
+enum WalkMood {
+  NOT_GOOD
+  OKAY
+  GOOD
+  EXCELLENT
+}
+
+// A single timestamped moment logged by the walker during a walk — this
+// is the primary way walk activity gets recorded now, replacing the old
+// pattern of one bundled poo/pee/notes/photos summary submitted only at
+// the very end.
+model WalkEvent {
+  id             String        @id @default(cuid())
+  walkInstanceId String
+  walkInstance   WalkInstance  @relation(fields: [walkInstanceId], references: [id])
+  type           WalkEventType
+  note           String?
+  photoUrl       String?
+  occurredAt     DateTime      @default(now())
+
+  @@index([walkInstanceId])
+  @@map("walk_events")
 }
 
 model WalkPhoto {
@@ -434,6 +532,7 @@ model Notification {
   type      NotificationType
   title     String
   message   String
+  link      String? // where tapping this notification should take the user, e.g. "/admin/bookings/{id}"
   isRead    Boolean           @default(false)
   createdAt DateTime          @default(now())
 

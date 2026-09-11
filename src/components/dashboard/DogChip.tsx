@@ -7,7 +7,7 @@ type Dog = {
   breed: string;
   age: number;
   gender: string;
-  isVaccinated: boolean;
+  vaccinations: string[];
   photoUrl: string | null;
 };
 
@@ -29,7 +29,7 @@ export default function DogChip({ dog }: { dog: Dog }) {
           {dog.breed} · {dog.age} {dog.age === 1 ? "Year" : "Years"} ·{" "}
           {dog.gender === "MALE" ? "Male" : "Female"}
         </p>
-        {dog.isVaccinated && (
+        {dog.vaccinations.length > 0 && (
           <span className="mt-1 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
             Vaccinated
           </span>

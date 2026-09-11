@@ -3,14 +3,14 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Footprints } from "lucide-react";
-import WalkerFormModal, { type WalkerFormValues } from "./WalkerFormModal";
+import WalkerFormModal, { type WalkerFormValues, type ServiceAreaOption } from "./WalkerFormModal";
 
 type Walker = {
   id: string;
   name: string;
   mobileNumber: string;
   photoUrl: string | null;
-  area: string;
+  serviceAreas: ServiceAreaOption[];
   govIdType: string | null;
   govIdNumber: string | null;
   govIdPhotoUrl: string | null;
@@ -18,7 +18,13 @@ type Walker = {
   isActive: boolean;
 };
 
-export default function WalkerList({ initialWalkers }: { initialWalkers: Walker[] }) {
+export default function WalkerList({
+  initialWalkers,
+  serviceAreas,
+}: {
+  initialWalkers: Walker[];
+  serviceAreas: ServiceAreaOption[];
+}) {
   const [walkers, setWalkers] = useState<Walker[]>(initialWalkers);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Walker | null>(null);
@@ -35,7 +41,7 @@ export default function WalkerList({ initialWalkers }: { initialWalkers: Walker[
         name: editing.name,
         mobileNumber: editing.mobileNumber.replace("+91", ""),
         photoUrl: editing.photoUrl ?? "",
-        area: editing.area,
+        serviceAreaIds: editing.serviceAreas.map((a) => a.id),
         govIdType: editing.govIdType ?? "",
         govIdNumber: editing.govIdNumber ?? "",
         govIdPhotoUrl: editing.govIdPhotoUrl ?? "",
@@ -98,7 +104,12 @@ export default function WalkerList({ initialWalkers }: { initialWalkers: Walker[
                     </span>
                   </div>
                   <p className="font-mono text-xs text-ink/50">{walker.mobileNumber}</p>
-                  <p className="text-xs text-ink/50">📍 {walker.area}</p>
+                  <p className="text-xs text-ink/50">
+                    📍{" "}
+                    {walker.serviceAreas.length > 0
+                      ? walker.serviceAreas.map((a) => `${a.name}, ${a.city.name}`).join(" · ")
+                      : "No areas assigned"}
+                  </p>
                 </div>
               </div>
 
@@ -138,6 +149,7 @@ export default function WalkerList({ initialWalkers }: { initialWalkers: Walker[
       {modalOpen && (
         <WalkerFormModal
           initial={editingValues}
+          serviceAreas={serviceAreas}
           onClose={() => setModalOpen(false)}
           onSaved={async () => {
             setModalOpen(false);

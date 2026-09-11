@@ -13,4 +13,8 @@ export const addressSchema = z.object({
   latitude: z.number({ invalid_type_error: "Pick a location on the map" }),
   longitude: z.number({ invalid_type_error: "Pick a location on the map" }),
   isDefault: z.boolean().optional(),
+  // Which Service Area this address falls in — set by picking City + Area
+  // from the available list. Left blank when the customer's area isn't
+  // listed yet, which is treated as "not serviceable".
+  serviceAreaId: z.string().optional().or(z.literal("")),
 });

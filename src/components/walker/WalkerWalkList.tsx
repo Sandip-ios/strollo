@@ -1,4 +1,8 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import Link from "next/link";
+import { CalendarDays, MapPinned } from "lucide-react";
 import { WALK_SLOTS } from "@/lib/constants";
 
 type Walk = {
@@ -8,7 +12,7 @@ type Walk = {
   booking: {
     slot: string;
     customer: { name: string | null; mobileNumber: string };
-    address: { label: string; houseNumber: string; line1: string; city: string };
+    address: { label: string; houseNumber: string; line1: string; city: string; serviceArea: { name: string } | null };
     bookingDogs: { dog: { name: string } }[];
   };
 };
@@ -27,19 +31,37 @@ function formatDate(d: Date) {
   return new Date(d).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
 }
 
-function isToday(d: Date) {
+function dayLabel(d: Date): string {
   const today = new Date();
   const date = new Date(d);
-  return (
-    today.getFullYear() === date.getFullYear() &&
-    today.getMonth() === date.getMonth() &&
-    today.getDate() === date.getDate()
-  );
+  const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diffDays = Math.round((startOfDay(date) - startOfDay(today)) / 86400000);
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Tomorrow";
+  return formatDate(d);
+}
+
+function areaOf(walk: Walk): string {
+  return walk.booking.address.serviceArea?.name ?? walk.booking.address.city;
 }
 
 export default function WalkerWalkList({ walks }: { walks: Walk[] }) {
-  const today = walks.filter((w) => isToday(w.scheduledDate));
-  const upcoming = walks.filter((w) => !isToday(w.scheduledDate));
+  const [groupBy, setGroupBy] = useState<"day" | "area">("day");
+
+  const groups = useMemo(() => {
+    const map = new Map<string, Walk[]>();
+    const sorted = [...walks].sort((a, b) => a.scheduledDate.getTime() - b.scheduledDate.getTime());
+    for (const w of sorted) {
+      const key = groupBy === "day" ? dayLabel(w.scheduledDate) : areaOf(w);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(w);
+    }
+    // Area grouping has no natural chronological key, so sort those groups
+    // alphabetically instead of relying on Map insertion order.
+    const entries = Array.from(map.entries());
+    if (groupBy === "area") entries.sort((a, b) => a[0].localeCompare(b[0]));
+    return entries;
+  }, [walks, groupBy]);
 
   if (walks.length === 0) {
     return (
@@ -50,36 +72,64 @@ export default function WalkerWalkList({ walks }: { walks: Walk[] }) {
   }
 
   return (
-    <div className="space-y-8">
-      {today.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-navy-600">
-            Today
-          </h2>
-          <div className="space-y-3">
-            {today.map((w) => (
-              <WalkCard key={w.id} walk={w} />
-            ))}
-          </div>
-        </section>
-      )}
-      {upcoming.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink/40">
-            Upcoming
-          </h2>
-          <div className="space-y-3">
-            {upcoming.map((w) => (
-              <WalkCard key={w.id} walk={w} />
-            ))}
-          </div>
-        </section>
-      )}
+    <div>
+      <div className="mb-4 flex items-center gap-2">
+        <ToggleButton
+          active={groupBy === "day"}
+          onClick={() => setGroupBy("day")}
+          icon={CalendarDays}
+          label="By day"
+        />
+        <ToggleButton
+          active={groupBy === "area"}
+          onClick={() => setGroupBy("area")}
+          icon={MapPinned}
+          label="By area"
+        />
+      </div>
+
+      <div className="space-y-8">
+        {groups.map(([label, groupWalks]) => (
+          <section key={label}>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-navy-600">{label}</h2>
+            <div className="space-y-3">
+              {groupWalks.map((w) => (
+                <WalkCard key={w.id} walk={w} showDate={groupBy === "area"} />
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }
 
-function WalkCard({ walk }: { walk: Walk }) {
+function ToggleButton({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: typeof CalendarDays;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
+        active ? "border-navy-500 bg-navy-50 text-navy-700" : "border-sand bg-white text-ink/50 hover:border-navy-200"
+      }`}
+    >
+      <Icon className="h-3.5 w-3.5" strokeWidth={2} />
+      {label}
+    </button>
+  );
+}
+
+function WalkCard({ walk, showDate }: { walk: Walk; showDate: boolean }) {
   const slotLabel = WALK_SLOTS.find((s) => s.value === walk.booking.slot);
   return (
     <Link
@@ -100,11 +150,12 @@ function WalkCard({ walk }: { walk: Walk }) {
         </span>
       </div>
       <p className="mt-2 text-xs text-ink/60">
-        {formatDate(walk.scheduledDate)} · {slotLabel?.label} ({slotLabel?.time})
+        {showDate ? `${formatDate(walk.scheduledDate)} · ` : ""}
+        {slotLabel?.label} ({slotLabel?.time})
       </p>
       <p className="mt-1 text-xs text-ink/50">
         {walk.booking.address.houseNumber}, {walk.booking.address.label} — {walk.booking.address.line1},{" "}
-        {walk.booking.address.city}
+        {areaOf(walk)}
       </p>
     </Link>
   );

@@ -16,6 +16,7 @@ type Address = {
   latitude: number;
   longitude: number;
   isDefault: boolean;
+  serviceAreaId: string | null;
 };
 
 type Props = {
@@ -67,6 +68,7 @@ export default function AddressList({ initialAddresses }: Props) {
         latitude: editing.latitude,
         longitude: editing.longitude,
         isDefault: editing.isDefault,
+        serviceAreaId: editing.serviceAreaId ?? "",
       }
     : undefined;
 

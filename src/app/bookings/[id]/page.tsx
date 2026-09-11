@@ -46,7 +46,7 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
       address: true,
       walker: true,
       bookingDogs: { include: { dog: true } },
-      walks: { orderBy: { scheduledDate: "asc" }, include: { photos: true } },
+      walks: { orderBy: { scheduledDate: "asc" }, include: { photos: true, events: { orderBy: { occurredAt: "asc" } } } },
       payment: true,
     },
   });
@@ -147,6 +147,17 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
                         walkerNotes: walk.walkerNotes,
                         distanceMeters: walk.distanceMeters,
                         durationSec: walk.durationSec,
+                        routePath: walk.routePath as { lat: number; lng: number; ts: number }[] | null,
+                        events: walk.events.map((e) => ({
+                          id: e.id,
+                          type: e.type,
+                          note: e.note,
+                          photoUrl: e.photoUrl,
+                          occurredAt: e.occurredAt.toISOString(),
+                        })),
+                        startTime: walk.startTime,
+                        endTime: walk.endTime,
+                        mood: walk.mood,
                       }}
                     />
                   </li>
