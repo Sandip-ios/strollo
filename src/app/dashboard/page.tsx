@@ -438,15 +438,15 @@ export default async function DashboardPage() {
               Today's Walker
             </p>
             {currentBooking?.walker ? (
-              <div className="mt-3 flex items-center gap-3">
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-sky-50">
+              <div className="mt-3 flex items-center gap-3 rounded-xl border border-sand bg-white p-4">
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-sky-50">
                   {currentBooking.walker.photoUrl ? (
                     <Image src={currentBooking.walker.photoUrl} alt={currentBooking.walker.name} fill className="object-cover" />
                   ) : (
                     <UserIcon className="h-full w-full p-3 text-navy-300" />
                   )}
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="font-display text-base font-bold text-ink">{currentBooking.walker.name}</p>
                   <div className="mt-0.5 flex items-center gap-1 text-xs font-bold text-amber-500">
                     {walkerAggregate && walkerAggregate._count > 0 ? (
