@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Dog } from "lucide-react";
 import { onNavProgressStart } from "@/lib/nav-progress";
 
 // A thin bar at the very top of the viewport (like GitHub/YouTube) that
@@ -116,7 +116,7 @@ export default function NavigationProgress() {
       {overlay && (
         <div className="fixed inset-0 z-[99] flex items-center justify-center bg-ink/10 backdrop-blur-[1px]">
           <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-6 py-5 shadow-lg">
-            <Loader2 className="h-7 w-7 animate-spin text-navy-600" strokeWidth={2} />
+            <Dog className="h-8 w-8 animate-bounce text-sky-500" strokeWidth={1.75} />
             <p className="text-sm font-medium text-ink/70">Loading…</p>
           </div>
         </div>
