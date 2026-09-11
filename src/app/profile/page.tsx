@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import { MapPin, Headphones, ArrowRight } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { homeRouteForRole } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
@@ -24,6 +26,33 @@ export default async function ProfilePage() {
           initialEmail={user.email ?? ""}
           mobileNumber={user.mobileNumber}
         />
+
+        <div className="mt-8 max-w-md space-y-3">
+          <Link
+            href="/addresses"
+            className="flex items-center justify-between rounded-xl border border-sand bg-white p-4 transition hover:border-navy-300 hover:shadow-sm"
+          >
+            <span className="flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-sky-50">
+                <MapPin className="h-4 w-4 text-sky-600" strokeWidth={2} />
+              </span>
+              <span className="text-sm font-semibold text-ink">Addresses</span>
+            </span>
+            <ArrowRight className="h-4 w-4 text-ink/40" />
+          </Link>
+          <Link
+            href="/contact"
+            className="flex items-center justify-between rounded-xl border border-sand bg-white p-4 transition hover:border-navy-300 hover:shadow-sm"
+          >
+            <span className="flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-sky-50">
+                <Headphones className="h-4 w-4 text-sky-600" strokeWidth={2} />
+              </span>
+              <span className="text-sm font-semibold text-ink">Support</span>
+            </span>
+            <ArrowRight className="h-4 w-4 text-ink/40" />
+          </Link>
+        </div>
       </div>
     </main>
   );
