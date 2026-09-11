@@ -77,10 +77,16 @@ export default function NavigationProgress() {
   }, [pathname, searchParams]);
 
   // Catch every same-tab, same-origin <Link>/<a> click as an implicit
-  // "navigation started" signal.
+  // "navigation started" signal. Registered on the CAPTURE phase
+  // deliberately: Next.js's <Link> calls preventDefault() in its own
+  // bubble-phase click handler (that's how it avoids a full page reload),
+  // and that handler runs before a bubble-phase listener here ever would
+  // — checking e.defaultPrevented at that point is always true and this
+  // never fires. Capture phase runs on the way DOWN to the target, before
+  // Link's handler has had a chance to touch the event at all.
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const anchor = (e.target as HTMLElement)?.closest("a");
       if (!anchor) return;
       const href = anchor.getAttribute("href");
@@ -88,8 +94,8 @@ export default function NavigationProgress() {
       if (href === window.location.pathname + window.location.search) return;
       start();
     }
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
+    document.addEventListener("click", handleClick, true);
+    return () => document.removeEventListener("click", handleClick, true);
   }, []);
 
   // Imperative router.push() call sites (login redirect, payment
