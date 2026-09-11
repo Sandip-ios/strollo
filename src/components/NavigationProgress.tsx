@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { onNavProgressStart } from "@/lib/nav-progress";
 
 // A thin bar at the very top of the viewport (like GitHub/YouTube) that
@@ -14,7 +15,9 @@ export default function NavigationProgress() {
   const searchParams = useSearchParams();
   const [visible, setVisible] = useState(false);
   const [pct, setPct] = useState(0);
+  const [overlay, setOverlay] = useState(false);
   const timers = useRef<number[]>([]);
+  const overlayTimer = useRef<number | null>(null);
   const isFirstRender = useRef(true);
 
   function clearTimers() {
@@ -32,9 +35,22 @@ export default function NavigationProgress() {
       window.setTimeout(() => setPct(82), 1200),
       window.setTimeout(() => setPct(90), 2500),
     ];
+
+    // Delayed on purpose — an instant/cached navigation shouldn't flash a
+    // center-screen overlay, but anything that actually takes a moment
+    // (cold Netlify function, a data-heavy page) will clear this delay and
+    // show it, which is exactly the "make the wait obvious" case.
+    if (overlayTimer.current !== null) window.clearTimeout(overlayTimer.current);
+    overlayTimer.current = window.setTimeout(() => setOverlay(true), 150);
   }
 
   function finish() {
+    if (overlayTimer.current !== null) {
+      window.clearTimeout(overlayTimer.current);
+      overlayTimer.current = null;
+    }
+    setOverlay(false);
+
     setVisible((wasVisible) => {
       if (!wasVisible) return wasVisible;
       clearTimers();
@@ -83,11 +99,22 @@ export default function NavigationProgress() {
   if (!visible) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-[3px] bg-transparent">
-      <div
-        className="h-full bg-gradient-to-r from-sky-400 via-navy-500 to-sky-400 shadow-[0_0_8px_rgba(75,131,178,0.6)] transition-[width] duration-300 ease-out"
-        style={{ width: `${pct}%` }}
-      />
-    </div>
+    <>
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-[3px] bg-transparent">
+        <div
+          className="h-full bg-gradient-to-r from-sky-400 via-navy-500 to-sky-400 shadow-[0_0_8px_rgba(75,131,178,0.6)] transition-[width] duration-300 ease-out"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      {overlay && (
+        <div className="fixed inset-0 z-[99] flex items-center justify-center bg-ink/10 backdrop-blur-[1px]">
+          <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-6 py-5 shadow-lg">
+            <Loader2 className="h-7 w-7 animate-spin text-navy-600" strokeWidth={2} />
+            <p className="text-sm font-medium text-ink/70">Loading…</p>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
