@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireWalker } from "@/lib/guards";
 import { computeRouteDistanceMeters } from "@/lib/geo";
 import { notifyByEmail, sendEmail, emailShell, ADMIN_NOTIFICATION_EMAILS } from "@/lib/email";
+import { APP_URL } from "@/lib/app-url";
 import { z } from "zod";
 
 const routePointSchema = z.object({
@@ -110,7 +111,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return updatedWalk;
   });
 
-  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+  const appUrl = APP_URL;
   const durationLabel = `${Math.round(durationSec / 60)} min`;
   const distanceLabel = distanceMeters !== undefined ? `${(distanceMeters / 1000).toFixed(2)} km` : null;
   const detailsLine =

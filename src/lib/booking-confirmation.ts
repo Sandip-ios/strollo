@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { generateWalkDates } from "@/lib/constants";
 import { notifyByEmail, sendEmail, emailShell, ADMIN_NOTIFICATION_EMAILS } from "@/lib/email";
 import { generateInvoicePdf } from "@/lib/invoice";
+import { APP_URL } from "@/lib/app-url";
 
 type ConfirmResult =
   | { ok: true; alreadyConfirmed: boolean; walksScheduled: number }
@@ -125,7 +126,7 @@ export async function confirmBookingPayment(params: {
   // just happened inside the transaction above — safe to generate now.
   const invoice = await generateInvoicePdf(bookingId);
 
-  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+  const appUrl = APP_URL;
 
   await notifyByEmail({
     email: booking.customer.email,

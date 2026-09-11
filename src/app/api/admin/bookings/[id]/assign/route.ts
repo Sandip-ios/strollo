@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/guards";
 import { notifyByEmail } from "@/lib/email";
 import { notifyByWhatsAppOrSms } from "@/lib/sms";
+import { APP_URL } from "@/lib/app-url";
 import { z } from "zod";
 
 const assignSchema = z.object({
@@ -131,7 +132,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     message: `${walker.name} has been ${isReassignment ? "reassigned as" : "assigned as"} your dog's walker.`,
   });
 
-  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+  const appUrl = APP_URL;
   const walkerCustomerName = booking.customer.name ?? booking.customer.mobileNumber;
   const walkerMessage = `You've been ${isReassignment ? "reassigned" : "assigned"} a walk for ${walkerCustomerName}'s dog. Check your dashboard for details.`;
 
