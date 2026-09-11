@@ -336,14 +336,18 @@ export default async function DashboardPage() {
           </div>
         </div>
 
+        {/* Hidden on mobile — the bottom tab bar's "Book a Walk" button
+            already covers this there, so it'd just be a redundant second
+            way to do the same thing. Desktop has no such persistent
+            button, so it stays visible there. */}
         {currentBooking && (
-          <div className="mt-6 flex flex-col items-start gap-3 rounded-xl border border-dashed border-sand bg-white/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-6 hidden items-center justify-between gap-3 rounded-xl border border-dashed border-sand bg-white/60 px-5 py-4 sm:flex">
             <p className="text-sm text-ink/60">
               Another dog to walk? You can book anytime.
             </p>
             <Link
               href="/book"
-              className="flex w-full shrink-0 items-center justify-center gap-1.5 rounded-lg bg-navy-600 px-4 py-2 text-sm font-semibold text-paper transition hover:bg-navy-700 sm:w-auto"
+              className="flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-navy-600 px-4 py-2 text-sm font-semibold text-paper transition hover:bg-navy-700"
             >
               <Plus className="h-4 w-4" strokeWidth={2.5} />
               Book another walk
