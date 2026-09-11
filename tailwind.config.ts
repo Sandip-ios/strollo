@@ -42,6 +42,18 @@ const config: Config = {
         sans: ["var(--font-inter)", "sans-serif"],
         mono: ["var(--font-plex-mono)", "monospace"],
       },
+      keyframes: {
+        // Each paw dims and steps back in, staggered via the standard
+        // delay-* utilities — reads as a paw "landing" rather than a
+        // generic pulse/spin.
+        "paw-step": {
+          "0%, 100%": { opacity: "0.2", transform: "scale(0.8)" },
+          "40%": { opacity: "1", transform: "scale(1)" },
+        },
+      },
+      animation: {
+        "paw-step": "paw-step 1.3s ease-in-out infinite",
+      },
     },
   },
   plugins: [],

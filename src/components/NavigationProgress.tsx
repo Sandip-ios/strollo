@@ -2,71 +2,43 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Dog } from "lucide-react";
+import PawLoader from "@/components/brand/PawLoader";
 import { onNavProgressStart } from "@/lib/nav-progress";
 
-// A thin bar at the very top of the viewport (like GitHub/YouTube) that
-// fills in while a page transition is in flight, so a slow route (cold
-// Netlify function, a data-heavy admin page, etc.) always gives the user
-// something to look at instead of an unresponsive-looking screen — which
-// is what was leading to impatient double-clicks.
+// The one loading indicator for every page transition in the app —
+// mounted once at the root, so there is never more than one instance
+// showing at a time no matter how many things call startNavProgress()
+// or how many <Link>s get clicked in quick succession (start() just
+// resets the same timer rather than stacking).
 export default function NavigationProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [visible, setVisible] = useState(false);
-  const [pct, setPct] = useState(0);
-  const [overlay, setOverlay] = useState(false);
-  const timers = useRef<number[]>([]);
-  const overlayTimer = useRef<number | null>(null);
+  const showTimer = useRef<number | null>(null);
   const isFirstRender = useRef(true);
 
-  function clearTimers() {
-    timers.current.forEach((t) => window.clearTimeout(t));
-    timers.current = [];
+  function clearShowTimer() {
+    if (showTimer.current !== null) {
+      window.clearTimeout(showTimer.current);
+      showTimer.current = null;
+    }
   }
 
   function start() {
-    clearTimers();
-    setVisible(true);
-    setPct(15);
-    timers.current = [
-      window.setTimeout(() => setPct(45), 120),
-      window.setTimeout(() => setPct(68), 500),
-      window.setTimeout(() => setPct(82), 1200),
-      window.setTimeout(() => setPct(90), 2500),
-    ];
-
-    // Delayed on purpose — an instant/cached navigation shouldn't flash a
-    // center-screen overlay, but anything that actually takes a moment
-    // (cold Netlify function, a data-heavy page) will clear this delay and
-    // show it, which is exactly the "make the wait obvious" case.
-    if (overlayTimer.current !== null) window.clearTimeout(overlayTimer.current);
-    overlayTimer.current = window.setTimeout(() => setOverlay(true), 150);
+    clearShowTimer();
+    // Below ~300ms a page transition reads as instant — showing anything
+    // for that would just flash on screen, so the loader only commits to
+    // appearing once a navigation has genuinely taken a moment.
+    showTimer.current = window.setTimeout(() => setVisible(true), 300);
   }
 
   function finish() {
-    if (overlayTimer.current !== null) {
-      window.clearTimeout(overlayTimer.current);
-      overlayTimer.current = null;
-    }
-    setOverlay(false);
-
-    setVisible((wasVisible) => {
-      if (!wasVisible) return wasVisible;
-      clearTimers();
-      setPct(100);
-      timers.current = [
-        window.setTimeout(() => {
-          setVisible(false);
-          setPct(0);
-        }, 200),
-      ];
-      return wasVisible;
-    });
+    clearShowTimer();
+    setVisible(false);
   }
 
-  // Route (or query) actually changed — the navigation this bar was
-  // tracking has landed, so wrap it up.
+  // Route (or query) actually changed — the navigation this was tracking
+  // has landed, so hide immediately.
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
@@ -80,10 +52,9 @@ export default function NavigationProgress() {
   // "navigation started" signal. Registered on the CAPTURE phase
   // deliberately: Next.js's <Link> calls preventDefault() in its own
   // bubble-phase click handler (that's how it avoids a full page reload),
-  // and that handler runs before a bubble-phase listener here ever would
-  // — checking e.defaultPrevented at that point is always true and this
-  // never fires. Capture phase runs on the way DOWN to the target, before
-  // Link's handler has had a chance to touch the event at all.
+  // so a bubble-phase listener here would always see defaultPrevented
+  // already true. Capture phase runs on the way down to the target,
+  // before Link's handler has touched the event at all.
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -105,22 +76,8 @@ export default function NavigationProgress() {
   if (!visible) return null;
 
   return (
-    <>
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-[3px] bg-transparent">
-        <div
-          className="h-full bg-gradient-to-r from-sky-400 via-navy-500 to-sky-400 shadow-[0_0_8px_rgba(75,131,178,0.6)] transition-[width] duration-300 ease-out"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-
-      {overlay && (
-        <div className="fixed inset-0 z-[99] flex items-center justify-center bg-ink/10 backdrop-blur-[1px]">
-          <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-6 py-5 shadow-lg">
-            <Dog className="h-8 w-8 animate-bounce text-sky-500" strokeWidth={1.75} />
-            <p className="text-sm font-medium text-ink/70">Loading…</p>
-          </div>
-        </div>
-      )}
-    </>
+    <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center bg-paper/70 backdrop-blur-[2px]">
+      <PawLoader />
+    </div>
   );
 }
